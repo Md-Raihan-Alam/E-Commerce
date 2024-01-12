@@ -4,7 +4,7 @@ interface productType extends Document {
   price: Number;
   description: String;
   image: String;
-  freeShipping: Boolean;
+  freeDelivery: Boolean;
   inventory: Number;
   averageRating: Number;
   author: String;
@@ -32,7 +32,7 @@ const productSchema = new mongoose.Schema<productType>(
       type: String,
       default: "/uploads/product-default,jpeg",
     },
-    freeShipping: {
+    freeDelivery: {
       type: Boolean,
       default: false,
     },

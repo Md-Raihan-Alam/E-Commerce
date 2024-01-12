@@ -17,6 +17,8 @@ const errorHandlerMiddleware = require("./middleware/error-handler");
 
 const authRouter = require("./routes/authRoutes");
 const productRouter = require("./routes/productRoutes");
+const orderRouter = require("./routes/orderRoutes");
+const userRouter = require("./routes/userRoutes");
 
 app.use(express.json());
 app.use(cookieParser(process.env.JWT_SECRET));
@@ -36,6 +38,8 @@ app.use(express.json());
 app.use(fileUpload());
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/product", productRouter);
+app.use("/api/v1/orders", orderRouter);
+app.use("/api/v1/users", userRouter);
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);
 const port = process.env.PORT || 5000;
