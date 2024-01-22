@@ -1,6 +1,8 @@
 import UserInfo from "./UserInfo";
 import AllUsers from "./AllUsers";
 import AllOrders from "./AllOrders";
+import ProductInfos from "./ProductInfo";
+import AllProducts from "./AllProducts";
 import { useState } from "react";
 const UserDashboard = () => {
   const [activeTab, setActiveTab] = useState<string | null>("About Me");
@@ -35,8 +37,8 @@ const UserDashboard = () => {
       {activeTab === "About Me" && <UserInfo />}
       {activeTab === "AllUsers" && <AllUsers />}
       {activeTab === "Orders" && <AllOrders />}
-      {activeTab === "Create/Edit Product" && <></>}
-      {activeTab === "All Product" && <></>}
+      {activeTab === "Create/Edit Product" && <ProductInfos />}
+      {activeTab === "All Product" && <AllProducts />}
     </>
   );
 };

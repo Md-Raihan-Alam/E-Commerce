@@ -34,7 +34,17 @@ const AllOrders = () => {
               />
             </td>
             <td className="whitespace-nowrap">$100.00</td>
-            <td className="whitespace-nowrap">Delivered</td>
+            <td className="whitespace-nowrap">
+              <select className="form-select">
+                <option selected value="pending">
+                  Pending
+                </option>
+                <option value="failed">Failed</option>
+                <option value="paid">Paid</option>
+                <option value="delivered">Delivered</option>
+                <option value="canceled">Canceled</option>
+              </select>
+            </td>
           </tr>
           {/* Add more rows with different data */}
         </tbody>
