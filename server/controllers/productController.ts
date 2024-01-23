@@ -58,25 +58,33 @@ const deleteProduct = async (req: Request, res: Response) => {
   res.status(StatusCodes.OK).json({ msg: "Success! Product removed" });
 };
 const createProduct = async (req: AuthRequest, res: Response) => {
-  req.body.user = req.user.userId;
-  const product = await Product.create(req.body);
-  if (!req.files) {
-    throw new BadRequestError("No File uploaded");
+  try {
+    if (!req.files) {
+      throw new BadRequestError("No File uploaded");
+    }
+    const prdouctImage = req.files.image;
+    if (!prdouctImage.mimetype.startsWith("image")) {
+      throw new BadRequestError("Please Upload Image");
+    }
+    const maxSize = 1024 * 1024;
+    if (prdouctImage.size > maxSize) {
+      throw new BadRequestError("Please upload image smaller than 1MB");
+    }
+    const imagePath = path.join(
+      __dirname,
+      "../public/uploads/" + `${prdouctImage.name}`
+    );
+    await prdouctImage.mv(imagePath);
+    req.body.user = req.user.userId;
+    console.log(req.body);
+    req.body.image = `../public/uploads/${prdouctImage.name}`;
+    const newProduct = await Product.create(req.body);
+    res.status(StatusCodes.OK).json("Product has been created");
+  } catch (error: any) {
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
   }
-  const prdouctImage = req.files.image;
-  if (!prdouctImage.mimetype.startsWith("image")) {
-    throw new BadRequestError("Please Upload Image");
-  }
-  const maxSize = 1024 * 1024;
-  if (prdouctImage.size > maxSize) {
-    throw new BadRequestError("Please upload image smaller than 1MB");
-  }
-  const imagePath = path.join(
-    __dirname,
-    "../public/uploads/" + `${prdouctImage.name}`
-  );
-  await prdouctImage.mv(imagePath);
-  res.status(StatusCodes.OK).json("Product has been created");
 };
 module.exports = {
   getAllProduct,

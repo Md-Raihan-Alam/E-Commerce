@@ -7,23 +7,41 @@ const ProductInfos = () => {
   const [description, setDescription] = useState("");
   const [image, setImage] = useState(null);
   const [freeDelivery, setFreeDelivery] = useState(false);
-  const [inventory, setInventory] = useState("");
-  const [averageRating, setAverageRating] = useState("");
-  const [authorName, setAuthorName] = useState("");
+  const [totalInventory, setTotalInventory] = useState("");
+  const [rating, setRating] = useState("");
+  const [author, setAuthor] = useState("");
   const handleSubmit = async () => {
-    const inventoryNumber = parseInt(inventory, 10);
-    const averageRatingFloat = parseFloat(averageRating);
+    const inventory = parseInt(totalInventory, 10);
+    const averageRating = parseFloat(rating);
     const formData = {
       name,
       price,
       description,
       image,
       freeDelivery,
-      inventoryNumber,
-      averageRatingFloat,
-      authorName,
+      inventory,
+      averageRating,
+      author,
     };
-    const createProduct = await axios.post(`${url}/api/v1/product`, formData);
+    try {
+      console.log(formData);
+      const { data } = await axios.post(`${url}/api/v1/product`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      console.log("Clicking");
+      setName("");
+      setPrice("");
+      setDescription("");
+      setImage(null);
+      setFreeDelivery(false);
+      setTotalInventory("");
+      setRating("");
+      setAuthor("");
+    } catch (error: any) {
+      console.log(error);
+    }
   };
 
   const handleImageChange = (e: any) => {
@@ -112,8 +130,8 @@ const ProductInfos = () => {
               className="form-control"
               name="inventory"
               placeholder="Enter inventory"
-              value={inventory}
-              onChange={(e) => setInventory(e.target.value)}
+              value={totalInventory}
+              onChange={(e) => setTotalInventory(e.target.value)}
             />
           </div>
           <div className="form-group my-2">
@@ -123,8 +141,8 @@ const ProductInfos = () => {
               className="form-control"
               name="averageRating"
               placeholder="Enter average rating"
-              value={averageRating}
-              onChange={(e) => setAverageRating(e.target.value)}
+              value={rating}
+              onChange={(e) => setRating(e.target.value)}
             />
           </div>
           <div className="form-group my-2">
@@ -134,8 +152,8 @@ const ProductInfos = () => {
               className="form-control"
               name="authorName"
               placeholder="Enter author name"
-              value={authorName}
-              onChange={(e) => setAuthorName(e.target.value)}
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
             />
           </div>
           <div className="w-full mt-2 mb-4">

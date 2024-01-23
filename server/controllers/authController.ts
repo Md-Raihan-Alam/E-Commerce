@@ -58,38 +58,50 @@ const verifyEmail = async (req: AuthRequest, res: Response) => {
   res.status(StatusCodes.OK).json({ msg: "Email Verified" });
 };
 const login = async (req: AuthRequest, res: Response) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    throw new BadRequestError("Please provide all details");
-  }
-  const user = await User.findOne({ email });
-  if (!user) {
-    throw new UnauthenticatedError("Wrong email/password");
-  }
-  const isPasswordCorrect = await user.comparePassword(password);
-  if (!isPasswordCorrect) {
-    throw new UnauthenticatedError("Wrong email/password");
-  }
-  const tokenUser = createTokenUser(user);
-  let refreshToken = "";
-  const existingToken = await Token.findOne({ user: user._id });
-  if (existingToken) {
-    const { isValid } = existingToken;
-    if (!isValid) {
-      throw UnauthenticatedError("Wrong email/password");
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      throw new BadRequestError("Please provide all details");
     }
-    refreshToken = existingToken.refreshToken;
+    const user = await User.findOne({ email });
+    if (!user) {
+      throw new UnauthenticatedError("Wrong email/password");
+    }
+    const isPasswordCorrect = await user.comparePassword(password);
+    if (!isPasswordCorrect) {
+      throw new UnauthenticatedError("Wrong email/password");
+    }
+    const tokenUser = createTokenUser(user);
+    let refreshToken = "";
+    const existingToken = await Token.findOne({ user: user._id });
+    if (existingToken) {
+      const { isValid } = existingToken;
+      if (!isValid) {
+        throw UnauthenticatedError("Wrong email/password");
+      }
+      refreshToken = existingToken.refreshToken;
+      // console.log(tokenUser);
+      // console.log(refreshToken);
+      attachCookiesToResponse({ res, user: tokenUser, refreshToken });
+      console.log(req.cookies);
+      console.log(req.signedCookies);
+      res.status(StatusCodes.OK).json({ user: tokenUser });
+      return;
+    }
+    refreshToken = crypto.randomBytes(40).toString("hex");
+    const userAgent = req.headers["user-agent"];
+    const ip = req.ip;
+    const userToken = { refreshToken, ip, userAgent, user: user._id };
+    await Token.create(userToken);
+    // console.log(tokenUser);
+    // console.log(refreshToken);
     attachCookiesToResponse({ res, user: tokenUser, refreshToken });
+    console.log(req.cookies);
+    console.log(req.signedCookies);
     res.status(StatusCodes.OK).json({ user: tokenUser });
-    return;
+  } catch (error: any) {
+    console.log(error);
   }
-  refreshToken = crypto.randomBytes(40).toString("hex");
-  const userAgent = req.headers["user-agent"];
-  const ip = req.ip;
-  const userToken = { refreshToken, ip, userAgent, user: user._id };
-  await Token.create(userToken);
-  attachCookiesToResponse({ res, user: tokenUser, refreshToken });
-  res.status(StatusCodes.OK).json({ user: tokenUser });
 };
 const logout = async (req: AuthRequest, res: Response) => {
   await Token.findOneAndDelete({ user: req.user.userId });
