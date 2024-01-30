@@ -1,8 +1,12 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useState } from "react";
+import { useGlobalContext, GlobalContextTypes } from "../../context";
 import cartSVG from "../../assets/cart.svg";
 import defaultBookCover from "../../assets/default-book-cover.png";
+import defaultCustomerPicture from "../../assets/Default-Customer-Picture.jpg";
 const Navbar = () => {
+  const context = useGlobalContext() as GlobalContextTypes;
+  const { user } = context;
   const [showOrder, setShowOrder] = useState(false);
   const showOrderOption = () => {
     setShowOrder(!showOrder);
@@ -15,20 +19,40 @@ const Navbar = () => {
             Book Shop
           </Link>
           <div className="d-flex">
-            <img
-              src={cartSVG}
-              width="30"
-              height="30"
-              alt="Cart"
-              onClick={showOrderOption}
-              className="mr-3 cursor-pointer"
-            />
-            <Link
-              to="/Login"
-              className="no-underline text-lg mr-2 btn btn-primary"
-            >
-              Sign Up/In
-            </Link>
+            {user && (
+              <>
+                <img
+                  src={cartSVG}
+                  width="30"
+                  height="30"
+                  alt="Cart"
+                  onClick={showOrderOption}
+                  className="mr-3 cursor-pointer"
+                />
+                <div className="flex">
+                  <img
+                    src={defaultCustomerPicture}
+                    width="30"
+                    height="30"
+                    className="rounded-lg w-[30px] h-[30px] object-cover"
+                  />
+                  <Link
+                    to="/user/showme"
+                    className="no-underline text-lg ml-2 font-semibold"
+                  >
+                    {user.name}
+                  </Link>
+                </div>
+              </>
+            )}
+            {!user && (
+              <Link
+                to="/Login"
+                className="no-underline text-lg mr-2 btn btn-primary"
+              >
+                Sign Up/In
+              </Link>
+            )}
           </div>
         </div>
       </nav>

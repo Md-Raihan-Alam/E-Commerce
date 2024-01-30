@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import validator from "validator";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 interface IUser extends Document {
   name: String;
   email: string;
@@ -73,6 +74,19 @@ UserSchema.pre("save", async function () {
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(String(this.password), salt);
 });
+UserSchema.methods.createJWT = function () {
+  return jwt.sign(
+    {
+      name: this.name,
+      userId: this._id,
+      role: this.role,
+      address: this.address,
+      image: this.image,
+    },
+    process.env.JWT_SECRET as string,
+    { expiresIn: process.env.JWT_LIFETIME }
+  );
+};
 UserSchema.methods.comparePassword = async function (
   candidatePassword: String
 ) {

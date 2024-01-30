@@ -6,11 +6,8 @@ const {
   UnauthenticatedError,
   NotFoundError,
 } = require("../errors");
-const {
-  createTokenUser,
-  attachCookiesToResponse,
-  checkPermissionUser,
-} = require("../utils");
+const { checkPermissionUser } = require("../utils");
+const { isTokenValid } = require("../utils/index");
 interface AuthRequest extends Request {
   user?: any;
 }
@@ -27,6 +24,17 @@ const getSingleUser = async (req: AuthRequest, res: Response) => {
   res.status(StatusCodes.OK).json({ user });
 };
 const showCurrentUser = async (req: AuthRequest, res: Response) => {
+  const { token } = req.body;
+  try {
+    const decoded = isTokenValid(token);
+    return res
+      .status(StatusCodes.OK)
+      .json({ operation: "success", name: decoded });
+  } catch (error: any) {
+    return res
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({ operation: "unsuccess", err: error });
+  }
   res.status(StatusCodes.OK).json({ user: req.user });
 };
 const updateUser = async (req: AuthRequest, res: Response) => {};

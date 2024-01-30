@@ -12,7 +12,7 @@ const {
 } = require("../controllers/authController");
 router.post("/register", register);
 router.post("/login", login);
-router.delete("/logout", authneticateUser, logout);
+router.delete("/logout", logout);
 router.post("/verify-email", verifyEmail);
 router.post("/reset-password", resetPassword);
 router.post("/forgot-password", forgotPassword);

@@ -7,7 +7,7 @@ import url from "../../utils/url";
 import axios from "axios";
 const Login = () => {
   const context = useGlobalContext() as GlobalContextTypes;
-  const { saveUser } = context;
+  const { saveUser, setCookie } = context;
   const history = useNavigate();
   const [userInfo, setUserInfo] = useState({
     email: "",
@@ -24,6 +24,8 @@ const Login = () => {
     setLoading(true);
     try {
       const { data } = await axios.post(`${url}/api/v1/auth/login`, userInfo);
+      setCookie(data.token);
+      saveUser(data.user);
       setUserInfo({ email: "", password: "" });
       showAlert({
         type: "success",

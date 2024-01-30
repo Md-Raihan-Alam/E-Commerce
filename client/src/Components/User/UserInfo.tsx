@@ -1,16 +1,22 @@
 import { useState } from "react";
+import axios from "axios";
+import url from "../../utils/url";
+import { useGlobalContext, GlobalContextTypes } from "../../context";
 const UserInfo = () => {
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
-  const [image, setImage] = useState(null);
+  const context = useGlobalContext() as GlobalContextTypes;
+  const { user, saveUser, logoutUser } = context;
+  const [name, setName] = useState(user ? user.name : "");
+  const [address, setAddress] = useState(user ? user.address : "");
+  const [image, setImage] = useState(user ? user.image : null);
   const handleUpdate = () => {
     console.log("Update button clicked");
   };
   const handleChangePassword = () => {
     console.log("Change password button clicked");
   };
-  const handleLogout = () => {
-    console.log("Logout button clicked");
+  const handleLogout = async () => {
+    saveUser(null);
+    logoutUser();
   };
   const handleImageChange = (e: any) => {
     const file = e.target.files[0];

@@ -9,7 +9,23 @@ import ChangePassword from "./Components/ResetPassword/Change-Password";
 import ResetPassword from "./Components/ResetPassword/Reset-Password";
 import Product from "./Components/Product/Product";
 import UserDashboard from "./Components/User/UserDashboard";
+import ProtectedRoute from "./Components/Navbar/ProtectedRoute";
+import { useGlobalContext, GlobalContextTypes } from "./context";
+import { useEffect } from "react";
+import Loading from "./utils/Loading";
 function App() {
+  const context = useGlobalContext() as GlobalContextTypes;
+  const { fetchUser, isLoading } = context;
+  useEffect(() => {
+    fetchUser();
+  }, []);
+  if (isLoading) {
+    return (
+      <div className="w-full h-screen flex justify-center items-center">
+        <Loading />
+      </div>
+    );
+  }
   return (
     <BrowserRouter>
       <Routes>
@@ -18,11 +34,20 @@ function App() {
           <Route path="Register" element={<Register />} />
           <Route path="Login" element={<Login />} />
           <Route path="user/verify-email" element={<VerifyEmail />} />
-          <Route path="user/change-password" element={<ChangePassword />} />
+          <Route
+            path="user/change-password"
+            element={<ProtectedRoute element={<ChangePassword />} />}
+          />
           <Route path="user/forgot-password" element={<ForgotPassword />} />
           <Route path="user/reset-password" element={<ResetPassword />} />
-          <Route path="product/:productDetails" element={<Product />} />
-          <Route path="user/showme" element={<UserDashboard />} />
+          <Route
+            path="product/:productDetails"
+            element={<ProtectedRoute element={<Product />} />}
+          />
+          <Route
+            path="user/showme"
+            element={<ProtectedRoute element={<UserDashboard />} />}
+          />
         </Route>
       </Routes>
     </BrowserRouter>

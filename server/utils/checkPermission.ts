@@ -1,5 +1,5 @@
 const { UnauthenticatedError } = require("../errors/index");
-const checkPermissionUser = (
+const checkUserPermission = (
   requestUser: { role: string; userId: string },
   resourceUserId: string
 ): void => {
@@ -7,4 +7,4 @@ const checkPermissionUser = (
   if (requestUser.userId === resourceUserId.toString()) return;
   throw new UnauthenticatedError("Not authorized to access this route");
 };
-export { checkPermissionUser };
+module.exports = checkUserPermission;

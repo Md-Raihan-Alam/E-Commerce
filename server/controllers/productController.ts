@@ -6,6 +6,7 @@ const {
   UnauthenticatedError,
   NotFoundError,
 } = require("../errors");
+const { isTokenValid } = require("../utils/index");
 import path from "path";
 interface File {
   name: string;
@@ -59,24 +60,37 @@ const deleteProduct = async (req: Request, res: Response) => {
 };
 const createProduct = async (req: AuthRequest, res: Response) => {
   try {
+    // console.log(req.body);
+    // console.log(req.files);
+    const { token } = req.body;
+    const decoded = isTokenValid(token);
+    if (decoded.role !== "admin") {
+      throw new UnauthenticatedError("User not allowed");
+    }
     if (!req.files) {
       throw new BadRequestError("No File uploaded");
     }
+    // console.log(req.files);
     const prdouctImage = req.files.image;
     if (!prdouctImage.mimetype.startsWith("image")) {
       throw new BadRequestError("Please Upload Image");
     }
-    const maxSize = 1024 * 1024;
+    const maxSize = 1024 * 1024 * 10;
+    console.log("ok");
+    console.log(prdouctImage.size);
     if (prdouctImage.size > maxSize) {
-      throw new BadRequestError("Please upload image smaller than 1MB");
+      console.log("here");
+      throw new BadRequestError("Please upload image smaller than 10MB");
     }
+    console.log(decoded);
+    console.log(req.body);
+    // const product
     const imagePath = path.join(
       __dirname,
       "../public/uploads/" + `${prdouctImage.name}`
     );
     await prdouctImage.mv(imagePath);
-    req.body.user = req.user.userId;
-    console.log(req.body);
+    req.body.user = decoded.userId;
     req.body.image = `../public/uploads/${prdouctImage.name}`;
     const newProduct = await Product.create(req.body);
     res.status(StatusCodes.OK).json("Product has been created");

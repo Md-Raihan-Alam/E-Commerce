@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import axios from "axios";
 import url from "../../utils/url";
+import { useGlobalContext, GlobalContextTypes } from "../../context";
 const ProductInfos = () => {
+  const context = useGlobalContext() as GlobalContextTypes;
+  const { getCookie } = context;
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
@@ -10,27 +13,31 @@ const ProductInfos = () => {
   const [totalInventory, setTotalInventory] = useState("");
   const [rating, setRating] = useState("");
   const [author, setAuthor] = useState("");
+  const fileInputRef = useRef(null);
   const handleSubmit = async () => {
+    const token = getCookie("token");
     const inventory = parseInt(totalInventory, 10);
     const averageRating = parseFloat(rating);
-    const formData = {
-      name,
-      price,
-      description,
-      image,
-      freeDelivery,
-      inventory,
-      averageRating,
-      author,
-    };
     try {
-      console.log(formData);
-      const { data } = await axios.post(`${url}/api/v1/product`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
+      await axios.post(
+        `${url}/api/v1/product`,
+        {
+          name,
+          price,
+          description,
+          image,
+          freeDelivery,
+          inventory,
+          averageRating,
+          author,
+          token,
         },
-      });
-      console.log("Clicking");
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
       setName("");
       setPrice("");
       setDescription("");
@@ -39,6 +46,7 @@ const ProductInfos = () => {
       setTotalInventory("");
       setRating("");
       setAuthor("");
+      fileInputRef.current.value = null;
     } catch (error: any) {
       console.log(error);
     }
@@ -90,6 +98,7 @@ const ProductInfos = () => {
               type="file"
               className="form-control"
               name="image"
+              ref={fileInputRef}
               onChange={handleImageChange}
             />
           </div>

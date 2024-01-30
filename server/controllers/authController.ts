@@ -1,5 +1,4 @@
 const User = require("../models/User");
-const Token = require("../models/Token");
 import path from "path";
 import { StatusCodes } from "http-status-codes";
 import crypto from "crypto";
@@ -11,7 +10,6 @@ interface AuthRequest extends Request {
 const {
   sendVerificationEmail,
   createTokenUser,
-  attachCookiesToResponse,
   sendResetPasswordEmail,
   createHash,
 } = require("../utils");
@@ -64,6 +62,8 @@ const login = async (req: AuthRequest, res: Response) => {
       throw new BadRequestError("Please provide all details");
     }
     const user = await User.findOne({ email });
+    // console.log(user);
+
     if (!user) {
       throw new UnauthenticatedError("Wrong email/password");
     }
@@ -72,47 +72,13 @@ const login = async (req: AuthRequest, res: Response) => {
       throw new UnauthenticatedError("Wrong email/password");
     }
     const tokenUser = createTokenUser(user);
-    let refreshToken = "";
-    const existingToken = await Token.findOne({ user: user._id });
-    if (existingToken) {
-      const { isValid } = existingToken;
-      if (!isValid) {
-        throw UnauthenticatedError("Wrong email/password");
-      }
-      refreshToken = existingToken.refreshToken;
-      // console.log(tokenUser);
-      // console.log(refreshToken);
-      attachCookiesToResponse({ res, user: tokenUser, refreshToken });
-      console.log(req.cookies);
-      console.log(req.signedCookies);
-      res.status(StatusCodes.OK).json({ user: tokenUser });
-      return;
-    }
-    refreshToken = crypto.randomBytes(40).toString("hex");
-    const userAgent = req.headers["user-agent"];
-    const ip = req.ip;
-    const userToken = { refreshToken, ip, userAgent, user: user._id };
-    await Token.create(userToken);
-    // console.log(tokenUser);
-    // console.log(refreshToken);
-    attachCookiesToResponse({ res, user: tokenUser, refreshToken });
-    console.log(req.cookies);
-    console.log(req.signedCookies);
-    res.status(StatusCodes.OK).json({ user: tokenUser });
+    const token = user.createJWT();
+    res.status(StatusCodes.OK).json({ user: tokenUser, token: token });
   } catch (error: any) {
     console.log(error);
   }
 };
 const logout = async (req: AuthRequest, res: Response) => {
-  await Token.findOneAndDelete({ user: req.user.userId });
-  res.cookie("accessToken", "logout", {
-    httpOnly: true,
-    expires: new Date(Date.now()),
-  });
-  res.cookie("refreshToken", "logout", {
-    httpOnly: true,
-    expires: new Date(Date.now()),
-  });
   res.status(StatusCodes.OK).json({ msg: "user logged out!" });
 };
 const forgotPassword = async (req: AuthRequest, res: Response) => {

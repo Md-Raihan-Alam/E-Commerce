@@ -13,11 +13,8 @@ const {
 } = require("../controllers/orderController");
 router
   .route("/")
-  .post(authneticateUser, createOrder)
-  .get(authneticateUser, authorizePermissions("admin"), getAllOrders);
-router.route("/myorder").get(authneticateUser, getCurrentUserOrders);
-router
-  .route("/:id")
-  .get(authneticateUser, getSingleOrder)
-  .patch(authneticateUser, updateOrder);
+  .post(createOrder)
+  .get(authorizePermissions("admin"), getAllOrders);
+router.route("/myorder").get(getCurrentUserOrders);
+router.route("/:id").get(getSingleOrder).patch(updateOrder);
 module.exports = router;
