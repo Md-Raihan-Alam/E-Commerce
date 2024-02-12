@@ -1,13 +1,15 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useState, ChangeEvent, FormEvent } from "react";
 import uselocalState from "../../utils/localState";
 import url from "../../utils/url";
 import Loading from "../../utils/Loading";
 const ForgotPassword = () => {
+  const history = useNavigate();
   const [email, setEmail] = useState("");
   const { alert, showAlert, isLoading, setLoading, hideAlert } =
     uselocalState();
+
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
   };

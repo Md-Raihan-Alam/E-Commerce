@@ -12,6 +12,6 @@ routes.route("/").get(getAllProduct).post(createProduct);
 routes
   .route("/:id")
   .get(getSingleProduct)
-  .patch([authorizePermissions("admin")], updateProduct)
-  .delete([authorizePermissions("admin")], deleteProduct);
+  .patch(updateProduct)
+  .delete(deleteProduct);
 module.exports = routes;

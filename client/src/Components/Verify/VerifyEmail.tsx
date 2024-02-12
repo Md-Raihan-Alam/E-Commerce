@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import url from "../../utils/url";
 import Loading from "../../utils/Loading";
@@ -10,6 +10,10 @@ const VerifyEmail = () => {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const query = useQuery();
+  if (!query.get("token")) {
+    const navigate = useNavigate();
+    navigate(-1);
+  }
   const verifyToken = async () => {
     try {
       await axios.post(`${url}/api/v1/auth/verify-email`, {
@@ -39,7 +43,7 @@ const VerifyEmail = () => {
         <div className="alert alert-primary">
           <h4>
             There was an error, please double-check your verification link or
-            try to login now by going to main page{" "}
+            try to login now by going to main page
           </h4>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { useGlobalContext, GlobalContextTypes } from "../../context";
 import uselocalState from "../../utils/localState";
 import Loading from "../../utils/Loading";
@@ -31,6 +31,7 @@ const Login = () => {
         type: "success",
         text: `Welcom ${data.user.name}. Redirection to dashboad...`,
       });
+      hideAlert();
       history("/");
     } catch (e: any) {
       showAlert({

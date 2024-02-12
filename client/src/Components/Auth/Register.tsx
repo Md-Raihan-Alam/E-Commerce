@@ -40,6 +40,7 @@ const Register = () => {
         text: data.msg,
         type: "success",
       });
+      hideAlert();
     } catch (error: any) {
       console.log(error);
       const { msg } = error.response?.data || "There was an error";

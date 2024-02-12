@@ -1,18 +1,49 @@
 import { useState } from "react";
-import axios from "axios";
-import url from "../../utils/url";
+import { useNavigate } from "react-router-dom";
 import { useGlobalContext, GlobalContextTypes } from "../../context";
+import url from "../../utils/url";
+import uselocalState from "../../utils/localState";
+import axios from "axios";
 const UserInfo = () => {
+  const history = useNavigate();
+  const { alert, showAlert, isLoading, setLoading, hideAlert } =
+    uselocalState();
   const context = useGlobalContext() as GlobalContextTypes;
-  const { user, saveUser, logoutUser } = context;
+  const { user, saveUser, getCookie, logoutUser } = context;
   const [name, setName] = useState(user ? user.name : "");
   const [address, setAddress] = useState(user ? user.address : "");
   const [image, setImage] = useState(user ? user.image : null);
-  const handleUpdate = () => {
-    console.log("Update button clicked");
+  const handleUpdate = async () => {
+    hideAlert();
+    setLoading(true);
+    const token = getCookie("token");
+    try {
+      const { data } = await axios.patch(
+        `${url}/api/v1/users/updateUser`,
+        {
+          name,
+          address,
+          image,
+          token,
+        },
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      showAlert({ text: data.msg, type: "success" });
+      saveUser(data.user);
+    } catch (error: any) {
+      showAlert({ text: error.msg || "Error occures", type: "danger" });
+    }
+    setTimeout(() => {
+      hideAlert();
+    }, 2000);
+    setLoading(false);
   };
   const handleChangePassword = () => {
-    console.log("Change password button clicked");
+    history("/user/change-password");
   };
   const handleLogout = async () => {
     saveUser(null);
@@ -27,6 +58,11 @@ const UserInfo = () => {
       <div className="row">
         <div className="col-md-6 offset-md-3">
           <div className="form-group my-2">
+            {alert.show && (
+              <div className={`alert alert-${alert.type}`}>
+                {alert.text || "Error occurred"}
+              </div>
+            )}
             <label htmlFor="name">Name</label>
             <input
               type="text"

@@ -26,6 +26,15 @@ interface AuthRequest extends Request {
   user?: any;
   files?: Files;
 }
+const generateUniqueFilename = (originalFilename: string) => {
+  const timestamp = new Date().toISOString().replace(/[-:]/g, "");
+  const randomString = Math.random().toString(36).substring(2, 8);
+  const extension = path.extname(originalFilename);
+
+  const sanitizedOriginalFilename = originalFilename.replace(/\s+/g, "_");
+
+  return `${timestamp}_${randomString}_${sanitizedOriginalFilename}${extension}`;
+};
 const getAllProduct = async (req: Request, res: Response) => {
   const product = await Product.find({});
   res.status(StatusCodes.OK).json({ product, count: product.length });
@@ -50,13 +59,20 @@ const updateProduct = async (req: Request, res: Response) => {
   res.status(StatusCodes.OK).json({ product });
 };
 const deleteProduct = async (req: Request, res: Response) => {
-  const { id: productId } = req.params;
-  const product = await Product.findOne({ _id: productId });
-  if (!product) {
-    throw new NotFoundError(`No product with id : ${productId}`);
+  try {
+    const { id: productId } = req.params;
+    const product = await Product.findById(productId);
+    if (!product) {
+      throw new NotFoundError(`No product with id: ${productId}`);
+    }
+    await Product.deleteOne({ _id: productId });
+    res.status(StatusCodes.OK).json({ msg: "Success! Product removed" });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: "Internal Server Error" });
   }
-  await product.remove();
-  res.status(StatusCodes.OK).json({ msg: "Success! Product removed" });
 };
 const createProduct = async (req: AuthRequest, res: Response) => {
   try {
@@ -67,32 +83,28 @@ const createProduct = async (req: AuthRequest, res: Response) => {
     if (decoded.role !== "admin") {
       throw new UnauthenticatedError("User not allowed");
     }
-    if (!req.files) {
-      throw new BadRequestError("No File uploaded");
-    }
-    // console.log(req.files);
-    const prdouctImage = req.files.image;
-    if (!prdouctImage.mimetype.startsWith("image")) {
-      throw new BadRequestError("Please Upload Image");
-    }
-    const maxSize = 1024 * 1024 * 10;
-    console.log("ok");
-    console.log(prdouctImage.size);
-    if (prdouctImage.size > maxSize) {
-      console.log("here");
-      throw new BadRequestError("Please upload image smaller than 10MB");
-    }
-    console.log(decoded);
-    console.log(req.body);
-    // const product
-    const imagePath = path.join(
-      __dirname,
-      "../public/uploads/" + `${prdouctImage.name}`
-    );
-    await prdouctImage.mv(imagePath);
+    if (req.files) {
+      const prdouctImage = req.files.image;
+      if (!prdouctImage.mimetype.startsWith("image")) {
+        throw new BadRequestError("Please Upload Image");
+      }
+      const maxSize = 1024 * 1024 * 10;
+      if (prdouctImage.size > maxSize) {
+        throw new BadRequestError("Please upload image smaller than 10MB");
+      }
+      const uniqueFilename = generateUniqueFilename(prdouctImage.name);
+      // const product
+      const imagePath = path.join(
+        __dirname,
+        "../public/uploads/" + `${uniqueFilename}`
+      );
+      await prdouctImage.mv(imagePath);
+      req.body.image = `/uploads/${uniqueFilename}`;
+    } else req.body.image = "";
+
     req.body.user = decoded.userId;
-    req.body.image = `../public/uploads/${prdouctImage.name}`;
-    const newProduct = await Product.create(req.body);
+
+    await Product.create(req.body);
     res.status(StatusCodes.OK).json("Product has been created");
   } catch (error: any) {
     res

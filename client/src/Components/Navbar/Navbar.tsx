@@ -4,6 +4,7 @@ import { useGlobalContext, GlobalContextTypes } from "../../context";
 import cartSVG from "../../assets/cart.svg";
 import defaultBookCover from "../../assets/default-book-cover.png";
 import defaultCustomerPicture from "../../assets/Default-Customer-Picture.jpg";
+import url from "../../utils/url";
 const Navbar = () => {
   const context = useGlobalContext() as GlobalContextTypes;
   const { user } = context;
@@ -30,12 +31,21 @@ const Navbar = () => {
                   className="mr-3 cursor-pointer"
                 />
                 <div className="flex">
-                  <img
-                    src={defaultCustomerPicture}
-                    width="30"
-                    height="30"
-                    className="rounded-lg w-[30px] h-[30px] object-cover"
-                  />
+                  {user.image === "" ? (
+                    <img
+                      src={defaultCustomerPicture}
+                      width="30"
+                      height="30"
+                      className="rounded-lg w-[30px] h-[30px] object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={`${url}${user.image}`}
+                      width="30"
+                      height="30"
+                      className="rounded-lg w-[30px] h-[30px] object-cover"
+                    />
+                  )}
                   <Link
                     to="/user/showme"
                     className="no-underline text-lg ml-2 font-semibold"

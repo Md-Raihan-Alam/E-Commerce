@@ -1,16 +1,41 @@
 const User = require("../models/User");
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
+import path from "path";
 const {
   BadRequestError,
   UnauthenticatedError,
   NotFoundError,
 } = require("../errors");
-const { checkPermissionUser } = require("../utils");
+const { checkPermissionUser, createTokenUser } = require("../utils");
 const { isTokenValid } = require("../utils/index");
+interface File {
+  name: string;
+  data: Buffer;
+  size: number;
+  encoding: string;
+  tempFilePath: string;
+  truncated: boolean;
+  mimetype: string;
+  md5: string;
+  mv: (path: string) => void;
+}
+interface Files {
+  image: File;
+}
 interface AuthRequest extends Request {
   user?: any;
+  files?: Files;
 }
+const generateUniqueFilename = (originalFilename: string) => {
+  const timestamp = new Date().toISOString().replace(/[-:]/g, "");
+  const randomString = Math.random().toString(36).substring(2, 8);
+  const extension = path.extname(originalFilename);
+
+  const sanitizedOriginalFilename = originalFilename.replace(/\s+/g, "_");
+
+  return `${timestamp}_${randomString}_${sanitizedOriginalFilename}${extension}`;
+};
 const getAllUsers = async (req: Request, res: Response) => {
   const users = await User.find({ role: "user" }).select("-password");
   res.status(StatusCodes.OK).json({ users });
@@ -35,20 +60,53 @@ const showCurrentUser = async (req: AuthRequest, res: Response) => {
       .status(StatusCodes.UNAUTHORIZED)
       .json({ operation: "unsuccess", err: error });
   }
-  res.status(StatusCodes.OK).json({ user: req.user });
 };
-const updateUser = async (req: AuthRequest, res: Response) => {};
+const updateUser = async (req: AuthRequest, res: Response) => {
+  try {
+    const { token, name, address } = req.body;
+    const decoded = isTokenValid(token);
+    const productImage = req.files?.image;
+    if (!productImage?.mimetype.startsWith("image")) {
+      throw new BadRequestError("Please upload image");
+    }
+    const maxSize = 1024 * 2014 * 10;
+    if (productImage.size > maxSize) {
+      throw new BadRequestError("Please upload image smaller than 10MB");
+    }
+    const uniqueProfilePictureName = generateUniqueFilename(productImage.name);
+    const imagePath = path.join(
+      __dirname,
+      "../public/uploads/" + `${uniqueProfilePictureName}`
+    );
+    await productImage.mv(imagePath);
+    const user = await User.findOne({ _id: decoded.userId });
+    user.address = address;
+    user.name = name;
+    user.image = `/uploads/${uniqueProfilePictureName}`;
+    await user.save();
+    const tokenUser = createTokenUser(user);
+    console.log(tokenUser);
+    res
+      .status(StatusCodes.OK)
+      .json({ msg: "Success! Profile Updated", user: tokenUser });
+  } catch (error: any) {
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
+  }
+};
 const updateUserPassword = async (req: AuthRequest, res: Response) => {
-  const { oldPassword, newPassword } = req.body;
-  if (!oldPassword || !newPassword) {
+  const { token, password } = req.body;
+  const decoded = isTokenValid(token);
+  if (!password.oldPassword || !password.newPassword) {
     throw new BadRequestError("Please provide values");
   }
-  const user = await User.findOne({ _id: req.user.userId });
-  const isPasswordCorrect = await user.comparePassword(oldPassword);
+  const user = await User.findOne({ _id: decoded.userId });
+  const isPasswordCorrect = await user.comparePassword(password.oldPassword);
   if (!isPasswordCorrect) {
     throw new UnauthenticatedError("Invalid Credentials");
   }
-  user.password = newPassword;
+  user.password = password.newPassword;
   await user.save();
   res.status(StatusCodes.OK).json({ msg: "Success! Password Updated" });
 };

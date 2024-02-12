@@ -4,22 +4,40 @@ import AllOrders from "./AllOrders";
 import ProductInfos from "./ProductInfo";
 import AllProducts from "./AllProducts";
 import { useState } from "react";
+import { useGlobalContext, GlobalContextTypes } from "../../context";
+import uselocalState from "../../utils/localState";
+import { useNavigate } from "react-router-dom";
+import Loading from "../../utils/Loading";
 const UserDashboard = () => {
-  const [activeTab, setActiveTab] = useState<string | null>("About Me");
+  const navigate = useNavigate();
+  const context = useGlobalContext() as GlobalContextTypes;
+  const { user } = context;
+  const [activeTab, setActiveTab] = useState<string | null>("Dashboard");
+  const { isLoading } = uselocalState();
   const updateTab = (e: string) => {
     setActiveTab(e);
   };
-  const adminTabs = [
-    "About Me",
-    "AllUsers",
+  let tabs = [
+    "Dashboard",
+    "Users",
     "Orders",
     "Create/Edit Product",
-    "All Product",
+    "Products",
   ];
+  if (user!.role === "user") {
+    tabs = ["Dashboard", "My Orders"];
+  }
+  if (isLoading) {
+    return (
+      <div className="w-full h-screen flex justify-center items-center">
+        <Loading />
+      </div>
+    );
+  }
   return (
     <>
       <ul className="nav nav-tabs">
-        {adminTabs.map((e) => {
+        {tabs.map((e) => {
           return (
             <li className="nav-items" key={e}>
               <span
@@ -34,11 +52,11 @@ const UserDashboard = () => {
           );
         })}
       </ul>
-      {activeTab === "About Me" && <UserInfo />}
-      {activeTab === "AllUsers" && <AllUsers />}
+      {activeTab === "Dashboard" && <UserInfo />}
+      {activeTab === "Users" && <AllUsers />}
       {activeTab === "Orders" && <AllOrders />}
       {activeTab === "Create/Edit Product" && <ProductInfos />}
-      {activeTab === "All Product" && <AllProducts />}
+      {activeTab === "Products" && <AllProducts />}
     </>
   );
 };
