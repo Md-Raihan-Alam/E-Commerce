@@ -3,16 +3,39 @@ import AllUsers from "./AllUsers";
 import AllOrders from "./AllOrders";
 import ProductInfos from "./ProductInfo";
 import AllProducts from "./AllProducts";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useGlobalContext, GlobalContextTypes } from "../../context";
 import uselocalState from "../../utils/localState";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import Loading from "../../utils/Loading";
+import axios from "axios";
+import url from "../../utils/url";
+function useQuery() {
+  return new URLSearchParams(useLocation().search);
+}
 const UserDashboard = () => {
-  const navigate = useNavigate();
   const context = useGlobalContext() as GlobalContextTypes;
   const { user } = context;
   const [activeTab, setActiveTab] = useState<string | null>("Dashboard");
+  const [editProduct, setEditProduct] = useState();
+  const query = useQuery();
+  useEffect(() => {
+    if (query.get("productId")) {
+      const id = query.get("productId");
+      setActiveTab("Create/Edit Product");
+
+      const getProduct = async (id: string | null) => {
+        try {
+          const { data } = await axios.get(`${url}/api/v1/product/${id}`);
+          setEditProduct(data.product);
+        } catch (error) {
+          console.error("Error fetching product:", error);
+        }
+      };
+
+      getProduct(id);
+    }
+  }, []);
   const { isLoading } = uselocalState();
   const updateTab = (e: string) => {
     setActiveTab(e);
@@ -55,7 +78,9 @@ const UserDashboard = () => {
       {activeTab === "Dashboard" && <UserInfo />}
       {activeTab === "Users" && <AllUsers />}
       {activeTab === "Orders" && <AllOrders />}
-      {activeTab === "Create/Edit Product" && <ProductInfos />}
+      {activeTab === "Create/Edit Product" && (
+        <ProductInfos props={editProduct} />
+      )}
       {activeTab === "Products" && <AllProducts />}
     </>
   );

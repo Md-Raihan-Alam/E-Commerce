@@ -47,19 +47,59 @@ const getSingleProduct = async (req: Request, res: Response) => {
   }
   res.status(StatusCodes.OK).json({ product });
 };
-const updateProduct = async (req: Request, res: Response) => {
-  const { id: productId } = req.params;
-  const product = await Product.findOneAndUpdate({ _id: productId }, req.body, {
-    new: true,
-    runValidators: true,
-  });
-  if (!product) {
-    throw new NotFoundError(`No product with id : ${productId}`);
+const updateProduct = async (req: AuthRequest, res: Response) => {
+  const product = await Product.findById(req.body.id);
+  try {
+    const { token } = req.body;
+    const decoded = isTokenValid(token);
+    if (decoded.role !== "admin") {
+      throw new UnauthenticatedError("User not allowed");
+    }
+    if (req.files) {
+      const prdouctImage = req.files.image;
+      if (!prdouctImage.mimetype.startsWith("image")) {
+        throw new BadRequestError("Please Upload Image");
+      }
+      const maxSize = 1024 * 1024 * 10;
+      if (prdouctImage.size > maxSize) {
+        throw new BadRequestError("Please upload image smaller than 10MB");
+      }
+      const uniqueFilename = generateUniqueFilename(prdouctImage.name);
+      const imagePath = path.join(
+        __dirname,
+        "../public/uploads/" + `${uniqueFilename}`
+      );
+      await prdouctImage.mv(imagePath);
+      req.body.image = `/uploads/${uniqueFilename}`;
+    } else req.body.image = product.image;
+
+    req.body.user = decoded.userId;
+    const { id: productId } = req.params;
+    const productUpdate = await Product.findOneAndUpdate(
+      { _id: productId },
+      req.body,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+    if (!productUpdate) {
+      throw new NotFoundError(`No product with id : ${productId}`);
+    }
+    res.status(StatusCodes.OK).json({ product });
+  } catch (error: any) {
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
   }
-  res.status(StatusCodes.OK).json({ product });
 };
 const deleteProduct = async (req: Request, res: Response) => {
   try {
+    const { token } = req.body;
+    const decoded = isTokenValid(token);
+    if (decoded.role !== "admin") {
+      throw new UnauthenticatedError("User not allowed");
+    }
     const { id: productId } = req.params;
     const product = await Product.findById(productId);
     if (!product) {

@@ -6,7 +6,9 @@ import Loading from "../../utils/Loading";
 import uselocalState from "../../utils/localState";
 import editSVG from "../../assets/edit.svg";
 import deleteSVG from "../../assets/delete.svg";
+import { useNavigate } from "react-router-dom";
 const AllProducts = () => {
+  const navigate = useNavigate();
   const { isLoading, setLoading } = uselocalState();
   const [allProducts, setAllProducts] = useState(null);
   const getAllProducts = async () => {
@@ -20,10 +22,13 @@ const AllProducts = () => {
     }
     setLoading(false);
   };
+  const sentEditProduct = (id: string) => {
+    // console.log(id);
+    window.location.href = `?productId=${id}`;
+  };
   const deleteProducts = async (id: string) => {
     setLoading(true);
     try {
-      console.log(id);
       await axios.delete(`${url}/api/v1/product/${id}`);
       getAllProducts();
     } catch (error: any) {
@@ -105,7 +110,10 @@ const AllProducts = () => {
                 <td className="whitespace-nowrap">{e.inventory}</td>
                 <td className="whitespace-nowrap">{e.averageRating}</td>
                 <td className="whitespace-nowrap">
-                  <button className="btn btn-primary m-2">
+                  <button
+                    className="btn btn-primary m-2"
+                    onClick={() => sentEditProduct(e.id)}
+                  >
                     <img src={editSVG} alt="edit" />
                   </button>
                   <button

@@ -1,8 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import url from "../../utils/url";
 import { useGlobalContext, GlobalContextTypes } from "../../context";
-const ProductInfos = () => {
+const ProductInfos = (props: object) => {
+  let itemsInfo = props.props;
   const context = useGlobalContext() as GlobalContextTypes;
   const { getCookie } = context;
   const [name, setName] = useState("");
@@ -13,11 +14,65 @@ const ProductInfos = () => {
   const [totalInventory, setTotalInventory] = useState("");
   const [rating, setRating] = useState("");
   const [author, setAuthor] = useState("");
+  const [imageUpdate, setImageUpdate] = useState(false);
   const fileInputRef = useRef(null);
+  useEffect(() => {
+    if (itemsInfo) {
+      setName(itemsInfo.name || "");
+      setPrice(itemsInfo.price || "");
+      setDescription(itemsInfo.description || "");
+      setFreeDelivery(itemsInfo.freeDelivery || false);
+      setTotalInventory(itemsInfo.inventory || "");
+      setRating(itemsInfo.averageRating || "");
+      setAuthor(itemsInfo.author || "");
+    }
+  }, [itemsInfo]);
+  const updateSubmit = async () => {
+    const token = getCookie("token");
+    const inventory = parseInt(totalInventory, 10);
+    const averageRating = parseFloat(rating);
+    if (!imageUpdate) {
+      setImage(itemsInfo.image);
+    }
+    try {
+      await axios.patch(
+        `${url}/api/v1/product/${itemsInfo._id}`,
+        {
+          id: itemsInfo._id,
+          name,
+          price,
+          description,
+          image,
+          freeDelivery,
+          inventory,
+          averageRating,
+          author,
+          token,
+        },
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      setName("");
+      setPrice("");
+      setDescription("");
+      setImage(null);
+      setFreeDelivery(false);
+      setTotalInventory("");
+      setRating("");
+      setAuthor("");
+      fileInputRef.current.value = null;
+    } catch (error: any) {
+      console.log(error);
+    }
+  };
   const handleSubmit = async () => {
     const token = getCookie("token");
     const inventory = parseInt(totalInventory, 10);
     const averageRating = parseFloat(rating);
+
     try {
       await axios.post(
         `${url}/api/v1/product`,
@@ -53,6 +108,7 @@ const ProductInfos = () => {
   };
 
   const handleImageChange = (e: any) => {
+    setImageUpdate(true);
     const file = e.target.files[0];
     setImage(file);
   };
@@ -165,14 +221,25 @@ const ProductInfos = () => {
               onChange={(e) => setAuthor(e.target.value)}
             />
           </div>
+
           <div className="w-full mt-2 mb-4">
-            <button
-              type="button"
-              className="btn btn-primary w-full btn-block"
-              onClick={handleSubmit}
-            >
-              Create
-            </button>
+            {props === null ? (
+              <button
+                type="button"
+                className="btn btn-primary w-full btn-block"
+                onClick={handleSubmit}
+              >
+                Create
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-primary w-full btn-block"
+                onClick={updateSubmit}
+              >
+                Update
+              </button>
+            )}
           </div>
         </div>
       </div>
