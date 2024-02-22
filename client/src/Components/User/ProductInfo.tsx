@@ -6,6 +6,7 @@ const ProductInfos = (props: object) => {
   let itemsInfo = props.props;
   const context = useGlobalContext() as GlobalContextTypes;
   const { getCookie } = context;
+  const [productFound, setProductFound] = useState(false);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
@@ -17,7 +18,8 @@ const ProductInfos = (props: object) => {
   const [imageUpdate, setImageUpdate] = useState(false);
   const fileInputRef = useRef(null);
   useEffect(() => {
-    if (itemsInfo) {
+    if (itemsInfo != undefined) {
+      setProductFound(true);
       setName(itemsInfo.name || "");
       setPrice(itemsInfo.price || "");
       setDescription(itemsInfo.description || "");
@@ -26,6 +28,7 @@ const ProductInfos = (props: object) => {
       setRating(itemsInfo.averageRating || "");
       setAuthor(itemsInfo.author || "");
     }
+    console.log(productFound);
   }, [itemsInfo]);
   const updateSubmit = async () => {
     const token = getCookie("token");
@@ -223,7 +226,7 @@ const ProductInfos = (props: object) => {
           </div>
 
           <div className="w-full mt-2 mb-4">
-            {props === null ? (
+            {productFound === false ? (
               <button
                 type="button"
                 className="btn btn-primary w-full btn-block"

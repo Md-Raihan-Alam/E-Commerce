@@ -1,6 +1,6 @@
 import closeSVG from "../../assets/close.svg";
 import defaultPicture from "../../assets/default-book-cover.png";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useGlobalContext, GlobalContextTypes } from "../../context";
 import uselocalState from "../../utils/localState";
@@ -10,19 +10,75 @@ import axios from "axios";
 const Dashboard = () => {
   const context = useGlobalContext() as GlobalContextTypes;
   const { user } = context;
+  const { isLoading, setLoading } = uselocalState();
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(0);
+  const [selectedRating, setSelectedRating] = useState<string>("");
+  const handleMinPriceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(event.target.value);
+    setMinPrice(value);
+  };
+  const handleMaxPriceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(event.target.value);
+    setMaxPrice(value);
+  };
+  const handleRatingChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedRating(event.target.value);
+  };
   const [showMenu, setShowMenu] = useState(false);
-  const numberOfTimes = 50;
-  const componentsArray = Array.from(
-    { length: numberOfTimes },
-    (value, index) => index
-  );
-  const { isLoading } = uselocalState();
+  const [allProducts, setAllProducts] = useState([]);
+  const getAllProductsReq = async () => {
+    setLoading(true);
+    try {
+      const { data } = await axios.get(`${url}/api/v1/product/`);
+      setAllProducts(data.product);
+    } catch (error) {
+      console.log(error);
+    }
+
+    setLoading(false);
+  };
+  const handleApplyFilter = async () => {
+    setLoading(true);
+    if (minPrice >= 0 && maxPrice >= 0) {
+      const queryParams = new URLSearchParams({
+        min_price: minPrice.toString(),
+        max_price: maxPrice.toString(),
+        rating: selectedRating,
+      });
+      try {
+        const { data } = await axios.get(
+          `${url}/api/v1/product/filter?${queryParams.toString()}`
+        );
+        // console.log(data.products);
+        setAllProducts(data.products);
+      } catch (error) {
+        console.log(error);
+      }
+    } else {
+    }
+    setLoading(false);
+  };
+  const handleResetFilter = () => {
+    getAllProductsReq();
+    setSelectedRating("");
+    setMaxPrice(0);
+    setMinPrice(0);
+  };
+  useEffect(() => {
+    getAllProductsReq();
+  }, []);
   const updateDisplayMenu = () => {
     setShowMenu(!showMenu);
   };
   if (isLoading) {
     <div className="w-full h-[92vh] flex justify-center items-center">
       <Loading />
+    </div>;
+  }
+  if (allProducts === null) {
+    <div className="w-full h-[92vh] flex justify-center items-center">
+      <div className="alert alert-info">We have no product for now!</div>
     </div>;
   }
   return (
@@ -47,43 +103,92 @@ const Dashboard = () => {
           <div className="form-group">
             <label className="text-xl">Ratings</label>
             <div className="form-check">
-              <input type="radio" className="form-check-input" />
-              <label className="form-check-label">Higher than 4.0</label>
+              <input
+                type="radio"
+                value="4.0"
+                checked={selectedRating === "4.0"}
+                onChange={handleRatingChange}
+                className="form-check-input"
+              />
+              <label className="form-check-label">Above or equal 4.0</label>
             </div>
             <div className="form-check">
-              <input type="radio" className="form-check-input" />
-              <label className="form-check-label">Higher than 3.0</label>
+              <input
+                type="radio"
+                value="3.0"
+                checked={selectedRating === "3.0"}
+                onChange={handleRatingChange}
+                className="form-check-input"
+              />
+              <label className="form-check-label">Above or equal 3.0</label>
             </div>
             <div className="form-check">
-              <input type="radio" className="form-check-input" />
-              <label className="form-check-label">Higher than 2.0</label>
+              <input
+                type="radio"
+                value="2.0"
+                checked={selectedRating === "2.0"}
+                onChange={handleRatingChange}
+                className="form-check-input"
+              />
+              <label className="form-check-label">Above or equal 2.0</label>
             </div>
             <div className="form-check">
-              <input type="radio" className="form-check-input" />
-              <label className="form-check-label">Higher than 1.0</label>
+              <input
+                type="radio"
+                value="1.0"
+                checked={selectedRating === "1.0"}
+                onChange={handleRatingChange}
+                className="form-check-input"
+              />
+              <label className="form-check-label">Above or equal 1.0</label>
             </div>
             <div className="form-check">
-              <input type="radio" className="form-check-input" />
+              <input
+                type="radio"
+                value=""
+                checked={!selectedRating}
+                onChange={handleRatingChange}
+                className="form-check-input"
+              />
               <label className="form-check-label">Any</label>
             </div>
           </div>
           <div className="form-group">
             <label htmlFor="price">Min Price</label>
             <input
-              type="text"
+              type="number"
+              min="0"
               className="form-control"
+              value={minPrice}
+              onChange={handleMinPriceChange}
               placeholder="Enter minimum price"
             />
           </div>
           <div className="form-group">
             <label htmlFor="price">Max Price</label>
             <input
-              type="text"
+              type="number"
+              min="0"
+              value={maxPrice}
+              onChange={handleMaxPriceChange}
               className="form-control"
               placeholder="Enter minimum price"
             />
           </div>
-          <button className="btn btn-block btn-success w-[90%]">Apply</button>
+          <button
+            className="btn btn-block btn-success w-[90%]"
+            onClick={handleApplyFilter}
+            disabled={minPrice < 0 || maxPrice < 0}
+          >
+            Apply
+          </button>
+          <button
+            className="btn btn-block btn-success w-[90%]"
+            onClick={handleResetFilter}
+            disabled={minPrice < 0 || maxPrice < 0}
+          >
+            Reset
+          </button>
         </div>
       )}
 
@@ -100,27 +205,40 @@ const Dashboard = () => {
             )}
           </div>
           <div className="row">
-            {componentsArray.map((index) => (
+            {allProducts!.map((index: any) => (
               <Link
-                to={`/product/${index}`}
+                to={`/product/${index._id}`}
                 className="flex no-underline justify-around items-center col-lg-3 col-md-4 col-sm-6 mb-4"
-                key={index}
+                key={index._id}
               >
                 <div
                   className="card"
-                  style={{ width: "100%", maxWidth: "300px" }}
+                  style={{ width: "100%", maxWidth: "300px", height: "500px" }}
                 >
-                  <img
-                    className="card-img-top"
-                    src={defaultPicture}
-                    alt="Card image cap"
-                  />
+                  {index.image === "" ? (
+                    <img
+                      className="card-img-top w-[300px] h-[300px]"
+                      src={defaultPicture}
+                      alt="Card image cap"
+                    />
+                  ) : (
+                    <img
+                      className="card-img-top w-[300px] h-[300px]"
+                      src={`${url}${index.image}`}
+                      alt="Card image cap"
+                    />
+                  )}
+
                   <div className="card-body">
-                    <h5 className="card-title">Book Title</h5>
-                    <h6 className="card-title">Author name</h6>
-                    <p className="card-text d-flex justify-content-between">
-                      <span>Rating</span>
-                      <span>Price</span>
+                    <h5 className="card-title w-full h-fit min-h-[50px]">
+                      {index.name}
+                    </h5>
+                    <h6 className="card-title w-full h-[30px]">
+                      {index.author}
+                    </h6>
+                    <p className="card-text d-flex w-full h-[50px] justify-content-between">
+                      <span>{index.averageRating}</span>
+                      <span>{index.price}</span>
                     </p>
                   </div>
                 </div>

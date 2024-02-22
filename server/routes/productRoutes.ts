@@ -7,8 +7,12 @@ const {
   getSingleProduct,
   updateProduct,
   deleteProduct,
+  getRecentProducts,
+  getFilterProducts,
 } = require("../controllers/productController");
 routes.route("/").get(getAllProduct).post(createProduct);
+routes.route("/recent/:id").get(getRecentProducts);
+routes.route("/filter").get(getFilterProducts);
 routes
   .route("/:id")
   .get(getSingleProduct)

@@ -26,6 +26,9 @@ interface AuthRequest extends Request {
   user?: any;
   files?: Files;
 }
+const hasNumber = (value: string): boolean => {
+  return /\d/.test(value);
+};
 const generateUniqueFilename = (originalFilename: string) => {
   const timestamp = new Date().toISOString().replace(/[-:]/g, "");
   const randomString = Math.random().toString(36).substring(2, 8);
@@ -39,6 +42,58 @@ const getAllProduct = async (req: Request, res: Response) => {
   const product = await Product.find({});
   res.status(StatusCodes.OK).json({ product, count: product.length });
 };
+const getRecentProducts = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    // console.log(id);
+    const recentProducts = await Product.find({ _id: { $ne: id } })
+      .sort({ updatedAt: -1 })
+      .limit(4);
+
+    res.status(StatusCodes.OK).json({ products: recentProducts });
+  } catch (error) {
+    console.error("Error fetching recently updated products:", error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error });
+  }
+};
+const getFilterProducts = async (req: Request, res: Response) => {
+  try {
+    const { min_price, max_price, rating } = req.query;
+    const filter: any = {};
+
+    if (min_price !== undefined && max_price !== undefined) {
+      const min = parseInt(min_price as string);
+      const max = parseInt(max_price as string);
+
+      if (max === 0 && min === 0) {
+      } else if (max === 0 && min !== 0) {
+        filter.price = { $gte: min };
+      } else if (max !== 0 && min === 0) {
+        filter.price = { $lte: max };
+      } else if (max >= min) {
+        filter.price = { $gte: min, $lte: max };
+      } else if (max < min) {
+        filter.price = { $gte: min };
+      }
+    } else if (min_price !== undefined) {
+      filter.price = { $gte: parseInt(min_price as string) };
+    } else if (max_price !== undefined) {
+      filter.price = { $lte: parseInt(max_price as string) };
+    }
+
+    if (rating !== undefined && hasNumber(rating as string)) {
+      filter.averageRating = { $gte: parseFloat(rating as string) };
+    }
+    const filterProducts = await Product.find(filter);
+    res.status(StatusCodes.OK).json({ products: filterProducts });
+  } catch (error: any) {
+    console.error("Error fetching filtered products:", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
+  }
+};
+
 const getSingleProduct = async (req: Request, res: Response) => {
   const { id: productId } = req.params;
   const product = await Product.findOne({ _id: productId });
@@ -158,4 +213,6 @@ module.exports = {
   updateProduct,
   deleteProduct,
   createProduct,
+  getRecentProducts,
+  getFilterProducts,
 };
