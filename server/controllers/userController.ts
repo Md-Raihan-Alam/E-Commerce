@@ -37,8 +37,8 @@ const generateUniqueFilename = (originalFilename: string) => {
   return `${timestamp}_${randomString}_${sanitizedOriginalFilename}${extension}`;
 };
 const getAllUsers = async (req: Request, res: Response) => {
-  const users = await User.find({ role: "user" }).select("-password");
-  res.status(StatusCodes.OK).json({ users });
+  // const users = await User.find({ role: "user" }).select("-password");
+  res.status(StatusCodes.OK).json(res.paginationResult);
 };
 const getSingleUser = async (req: AuthRequest, res: Response) => {
   const user = await User.findOne({ _id: req.params.id }).select("-password");
@@ -85,7 +85,6 @@ const updateUser = async (req: AuthRequest, res: Response) => {
     user.image = `/uploads/${uniqueProfilePictureName}`;
     await user.save();
     const tokenUser = createTokenUser(user);
-    console.log(tokenUser);
     res
       .status(StatusCodes.OK)
       .json({ msg: "Success! Profile Updated", user: tokenUser });

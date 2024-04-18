@@ -1,11 +1,14 @@
 import defaultPicture from "../../assets/default-book-cover.png";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import axios from "axios";
 import url from "../../utils/url";
 import uselocalState from "../../utils/localState";
 import { useEffect, useState } from "react";
 import Loading from "../../utils/Loading";
+import { useDispatch, useSelector } from "react-redux";
+import { addToCart, removeFromCart } from "../../store/slices/cart-slice";
 interface ProductType {
+  id: string;
   name: string;
   author: string;
   inventory: number;
@@ -13,12 +16,14 @@ interface ProductType {
   description: string;
   price: number;
   averageRating: number;
+  orderedQuantity: number;
 }
 
 const Product = () => {
   const { isLoading, setLoading } = uselocalState();
   const [product, setProduct] = useState<ProductType | null>(null);
   const [recentProduct, setRecentProducts] = useState([]);
+  const [totalQuantity, setTotalQuantity] = useState(1);
   const { productDetails } = useParams();
   const getSingleProduct = async (id: string | null | undefined) => {
     setLoading(true);
@@ -27,10 +32,6 @@ const Product = () => {
       setProduct(product.data.product);
       const recent = await axios.get(`${url}/api/v1/product/recent/${id}`);
       setRecentProducts(recent.data.products);
-      console.log(recent.data);
-      // console.log(recent.data.products);
-      // console.log(recent.data.products);
-      // console.log(data);
       setLoading(false);
     } catch (error) {
       console.log(error);
@@ -40,6 +41,23 @@ const Product = () => {
   useEffect(() => {
     getSingleProduct(productDetails);
   }, []);
+  const dispatch = useDispatch();
+  const handleAddToCart = () => {
+    if (product !== null) product.orderedQuantity = totalQuantity;
+    dispatch(addToCart(product));
+  };
+  const handleRemoveFromCart = () => {
+    dispatch(removeFromCart(product.id));
+  };
+
+  const onInc = () => {
+    if (totalQuantity < product?.inventory)
+      setTotalQuantity((prevState) => prevState + 1);
+  };
+  const onDec = () => {
+    if (totalQuantity > 1) setTotalQuantity((prevState) => prevState - 1);
+  };
+  const { cart } = useSelector((state) => state);
   if (isLoading || product === null) {
     return (
       <div className="w-full h-screen flex justify-center items-center">
@@ -73,25 +91,67 @@ const Product = () => {
           <div className="text-base my-2 sm:text-lg font-semibold text-secondary">
             {product.author}
           </div>
+          {product.inventory > 0 ? (
+            <>
+              <div className="text-sm my-2 sm:text-base">
+                Stock:<span className="mx-2">{product.inventory}</span>
+              </div>
+              <div className="flex w-full my-2 text-sm sm:text-base justify-start items-center">
+                Quantity
+                <button
+                  onClick={onInc}
+                  className="btn btn-primary ml-2"
+                  disabled={
+                    cart.some((item) => item.id === product.id) ? true : false
+                  }
+                >
+                  +
+                </button>
+                <span className="w-[40px] sm:w-[100px] mx-2 h-[40px] flex rounded justify-center items-center bg-gray-300">
+                  {totalQuantity}
+                </span>
+                <button
+                  onClick={onDec}
+                  className="btn btn-primary"
+                  disabled={
+                    cart.some((item) => item.id === product.id) ? true : false
+                  }
+                >
+                  -
+                </button>
+              </div>
+            </>
+          ) : (
+            <></>
+          )}
+          {product.inventory <= 0 ? (
+            <div className="text-danger my-2 text-sm sm:text-base">
+              Out of Stock
+            </div>
+          ) : (
+            <></>
+          )}
           <div className="text-sm my-2 sm:text-base">
-            Stock:<span className="mx-2">{product.inventory}</span>
+            Price: {product.price}
           </div>
-          <div className="flex w-full my-2 text-sm sm:text-base justify-start items-center">
-            Quantity<button className="btn btn-primary ml-2">+</button>
-            <span className="w-[40px] sm:w-[100px] mx-2 h-[40px] flex rounded justify-center items-center bg-gray-300">
-              0
-            </span>
-            <button className="btn btn-primary">-</button>
-          </div>
-          <div className="text-danger my-2 text-sm sm:text-base">
-            Out of Stock
-          </div>
-          <div className="text-sm my-2 sm:text-base">{product.price}</div>
           <div className="text-sm my-2 sm:text-base">
-            {product.averageRating}
+            Rating: {product.averageRating}
           </div>
-          <button className="btn my-2 btn-primary text-sm sm:text-base">
-            Add to cart
+          <button
+            onClick={
+              cart.some((item) => item.id === product.id)
+                ? handleRemoveFromCart
+                : handleAddToCart
+            }
+            className={`btn my-2 ${
+              cart.some((item) => item.id === product.id)
+                ? "btn-danger"
+                : "btn-primary"
+            } text-sm sm:text-base`}
+          >
+            {cart.some((item) => item.id === product.id)
+              ? "Remove from cart"
+              : "Add to cart"}
           </button>
         </div>
       </div>
@@ -104,7 +164,13 @@ const Product = () => {
           {recentProduct.map((e: any) => (
             <div
               className="card"
-              style={{ width: "100%", maxWidth: "300px", height: "500px" }}
+              style={{
+                width: "100%",
+                maxWidth: "300px",
+                height: "500px",
+                cursor: "pointer",
+              }}
+              onClick={() => getSingleProduct(e._id)}
             >
               <img
                 className="card-img-top w-[300px] h-[300px]"

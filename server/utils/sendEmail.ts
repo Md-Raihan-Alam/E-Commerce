@@ -9,13 +9,18 @@ const sendEmail = async ({
   subject: string;
   html: string;
 }): Promise<void> => {
-  let transporter = nodemailer.createTransport(nodeMailerConfig);
-  let message = {
-    from: process.env.EMAIL,
-    to,
-    subject,
-    html,
-  };
-  transporter.sendMail(message);
+  try {
+    let transporter = nodemailer.createTransport(nodeMailerConfig);
+    let message = {
+      from: process.env.EMAIL,
+      to,
+      subject,
+      html,
+    };
+    console.log("email sent");
+    transporter.sendMail(message);
+  } catch (error: any) {
+    console.log(error);
+  }
 };
 module.exports = sendEmail;

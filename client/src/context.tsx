@@ -4,11 +4,15 @@ import url from "./utils/url";
 export interface GlobalContextTypes {
   isLoading: boolean;
   user: object | null;
+  activeTab: string | null;
+  setActiveTab: (tab: string | null) => void;
   saveUser: (user: object | null) => void;
   logoutUser: () => void;
   setCookie: (token: string) => void;
   getCookie: (cname: string) => string;
   fetchUser: () => void;
+  editProduct: object | null | undefined;
+  getProduct: (id: string | null) => void;
 }
 interface AppContextProps {
   children: ReactNode;
@@ -17,6 +21,18 @@ const GlobalContext = createContext<GlobalContextTypes | undefined>(undefined);
 const AppProvider: React.FC<AppContextProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<object | null>(null);
+  const [activeTab, setActiveTab] = useState<string | null>("Dashboard");
+  const [editProduct, setEditProduct] = useState();
+  const getProduct = async (id: string | null) => {
+    setActiveTab("Create/Edit Product");
+    try {
+      const { data } = await axios.get(`${url}/api/v1/product/${id}`);
+      setEditProduct(data.product);
+    } catch (error) {
+      console.error("Error fetching product:", error);
+    }
+  };
+
   const saveUser = (user: object | null) => {
     setUser(user);
   };
@@ -70,6 +86,10 @@ const AppProvider: React.FC<AppContextProps> = ({ children }) => {
         user,
         saveUser,
         logoutUser,
+        activeTab,
+        setActiveTab,
+        editProduct,
+        getProduct,
       }}
     >
       {children}

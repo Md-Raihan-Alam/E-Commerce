@@ -6,26 +6,45 @@ import Loading from "../../utils/Loading";
 import uselocalState from "../../utils/localState";
 import editSVG from "../../assets/edit.svg";
 import deleteSVG from "../../assets/delete.svg";
-import { useNavigate } from "react-router-dom";
+import { useGlobalContext, GlobalContextTypes } from "../../context";
 const AllProducts = () => {
-  const navigate = useNavigate();
+  const context = useGlobalContext() as GlobalContextTypes;
+  const { getProduct } = context;
+  const [nextPage, setNextPage] = useState(-1);
+  const [prevPage, setPrevPage] = useState(-1);
   const { isLoading, setLoading } = uselocalState();
   const [allProducts, setAllProducts] = useState(null);
   const getAllProducts = async () => {
-    setLoading(true);
+    // setLoading(true);
     try {
       const { data } = await axios.get(`${url}/api/v1/product/`);
-      setAllProducts(data.product);
-      getAllProducts();
+      setAllProducts(data.result);
+      setNextPage(data.next.page);
+      setPrevPage(data.previous.page);
     } catch (error: any) {
       console.log(error);
     }
     setLoading(false);
   };
-  const sentEditProduct = (id: string) => {
-    // console.log(id);
-    window.location.href = `?productId=${id}`;
+  const setPage = async (page: Number) => {
+    // setLoading(true);
+    let setPage = String(page);
+    try {
+      const { data } = await axios.get(
+        `${url}/api/v1/product?page=${setPage}&limit=5`
+      );
+      setAllProducts(data.result);
+      setNextPage(data.next.page);
+      setPrevPage(data.previous.page);
+    } catch (error) {
+      console.log(error);
+    }
+    setLoading(false);
   };
+  // const sentEditProduct = (id: string) => {
+  //   // console.log(id);
+  //   window.location.href = `?productId=${id}`;
+  // };
   const deleteProducts = async (id: string) => {
     setLoading(true);
     try {
@@ -37,6 +56,7 @@ const AllProducts = () => {
     setLoading(false);
   };
   useEffect(() => {
+    // console.log("ME");
     getAllProducts();
   }, []);
   if (isLoading) {
@@ -112,7 +132,7 @@ const AllProducts = () => {
                 <td className="whitespace-nowrap">
                   <button
                     className="btn btn-primary m-2"
-                    onClick={() => sentEditProduct(e.id)}
+                    onClick={() => getProduct(e.id)}
                   >
                     <img src={editSVG} alt="edit" />
                   </button>
@@ -128,6 +148,37 @@ const AllProducts = () => {
           })}
         </tbody>
       </table>
+      <div className="flex my-2 justify-center w-full h-full items-center">
+        {prevPage !== -1 && (
+          <button
+            type="button"
+            onClick={() => setPage(prevPage)}
+            className="cursor-pointer focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+          >
+            Previous
+          </button>
+        )}
+        <button
+          type="button"
+          disabled={true}
+          className="cursor-pointer py-2.5 px-5 me-2 mb-2 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+        >
+          {prevPage === -1 && nextPage === -1
+            ? 1
+            : prevPage === -1 && nextPage !== -1
+            ? nextPage - 1
+            : prevPage + 1}
+        </button>
+        {nextPage !== -1 && (
+          <button
+            type="button"
+            onClick={() => setPage(nextPage)}
+            className="cursor-pointer focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+          >
+            Next
+          </button>
+        )}
+      </div>
     </div>
   );
 };

@@ -1,14 +1,26 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useGlobalContext, GlobalContextTypes } from "../../context";
 import cartSVG from "../../assets/cart.svg";
 import defaultBookCover from "../../assets/default-book-cover.png";
 import defaultCustomerPicture from "../../assets/Default-Customer-Picture.jpg";
 import url from "../../utils/url";
+import { useSelector } from "react-redux";
+
 const Navbar = () => {
   const context = useGlobalContext() as GlobalContextTypes;
   const { user } = context;
   const [showOrder, setShowOrder] = useState(false);
+  const { cart } = useSelector((state) => state);
+  const [totalCart, setTotalCart] = useState(0);
+  useEffect(() => {
+    setTotalCart(
+      cart.reduce(
+        (acc: any, curr: any) => acc + curr.price * curr.orderedQuantity,
+        0
+      )
+    );
+  }, [cart]);
   const showOrderOption = () => {
     setShowOrder(!showOrder);
   };
@@ -70,134 +82,59 @@ const Navbar = () => {
         <div
           className={`w-[300px] fixed overflow-auto h-[92vh] right-0 bg-white z-10`}
         >
-          <div className="w-[70%] mt-4 h-fit my-4 mx-auto flex flex-col">
-            <img
-              src={defaultBookCover}
-              className="w-full h-[200px]"
-              alt="Book Cover"
-            />
-            <div className="flex flex-col w-full h-fit">
-              <div className="w-full flex justify-between items-center">
-                <div className="text-sm">Price</div>
-                <div className="text-sm">5.00</div>
-              </div>
-              <div className="w-full flex justify-between items-center">
-                <div className="text-sm">Quantity</div>
-                <div className="text-sm flex">
-                  <span className="mx-2">+</span>
-                  <span className="mx-2">1</span>
-                  <span className="mx-2">-</span>
-                </div>
-              </div>
-              <div className="w-full flex justify-between items-center">
-                <div className="text-sm">Total</div>
-                <div className="text-sm">5.00</div>
-              </div>
+          {cart && cart.length ? (
+            cart.map((item: any) => {
+              return (
+                <Link
+                  to={`/product/${item._id}`}
+                  className="w-[70%] no-underline alert alert-info mt-4 h-fit my-4 mx-auto flex flex-col"
+                >
+                  <img
+                    src={
+                      item.image === ""
+                        ? defaultBookCover
+                        : `${url}${item.image}`
+                    }
+                    className="w-full h-[200px]"
+                    alt={`${item.image === "" ? "Book Cover" : item.name}`}
+                  />
+                  <div className="flex flex-col w-full h-fit">
+                    <div className="w-full flex justify-between items-center">
+                      <div className="text-sm">Price</div>
+                      <div className="text-sm">{item.price}</div>
+                    </div>
+                    <div className="w-full flex justify-between items-center">
+                      <div className="text-sm">Quantity</div>
+                      <div className="text-sm">{item.orderedQuantity}</div>
+                    </div>
+                    <div className="w-full flex justify-between items-center">
+                      <div className="text-sm">Total</div>
+                      <div className="text-sm">
+                        {item.price * item.orderedQuantity}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })
+          ) : (
+            <div className="alert alert-primary w-10/12 m-4 text-center">
+              Your cart is empty
             </div>
-          </div>
-          <div className="w-[70%] mt-4 h-fit my-4 mx-auto flex flex-col">
-            <img
-              src={defaultBookCover}
-              className="w-full h-[200px]"
-              alt="Book Cover"
-            />
-            <div className="flex flex-col w-full h-fit">
-              <div className="w-full flex justify-between items-center">
-                <div className="text-sm">Price</div>
-                <div className="text-sm">5.00</div>
+          )}
+          {cart && cart.length ? (
+            <div className="grid  place-items-center m-2">
+              <div className="flex w-[80%] justify-between">
+                <div>Total Price:</div>
+                <div>{totalCart}</div>
               </div>
-              <div className="w-full flex justify-between items-center">
-                <div className="text-sm">Quantity</div>
-                <div className="text-sm flex">
-                  <span className="mx-2">+</span>
-                  <span className="mx-2">1</span>
-                  <span className="mx-2">-</span>
-                </div>
-              </div>
-              <div className="w-full flex justify-between items-center">
-                <div className="text-sm">Total</div>
-                <div className="text-sm">5.00</div>
-              </div>
+              <Link to="Order" className="btn btn-success btn-block w-[80%]">
+                Make Payment
+              </Link>
             </div>
-          </div>
-          <div className="w-[70%] mt-4 h-fit my-4 mx-auto flex flex-col">
-            <img
-              src={defaultBookCover}
-              className="w-full h-[200px]"
-              alt="Book Cover"
-            />
-            <div className="flex flex-col w-full h-fit">
-              <div className="w-full flex justify-between items-center">
-                <div className="text-sm">Price</div>
-                <div className="text-sm">5.00</div>
-              </div>
-              <div className="w-full flex justify-between items-center">
-                <div className="text-sm">Quantity</div>
-                <div className="text-sm flex">
-                  <span className="mx-2">+</span>
-                  <span className="mx-2">1</span>
-                  <span className="mx-2">-</span>
-                </div>
-              </div>
-              <div className="w-full flex justify-between items-center">
-                <div className="text-sm">Total</div>
-                <div className="text-sm">5.00</div>
-              </div>
-            </div>
-          </div>
-          <div className="w-[70%] mt-4 h-fit my-4 mx-auto flex flex-col">
-            <img
-              src={defaultBookCover}
-              className="w-full h-[200px]"
-              alt="Book Cover"
-            />
-            <div className="flex flex-col w-full h-fit">
-              <div className="w-full flex justify-between items-center">
-                <div className="text-sm">Price</div>
-                <div className="text-sm">5.00</div>
-              </div>
-              <div className="w-full flex justify-between items-center">
-                <div className="text-sm">Quantity</div>
-                <div className="text-sm flex">
-                  <span className="mx-2">+</span>
-                  <span className="mx-2">1</span>
-                  <span className="mx-2">-</span>
-                </div>
-              </div>
-              <div className="w-full flex justify-between items-center">
-                <div className="text-sm">Total</div>
-                <div className="text-sm">5.00</div>
-              </div>
-            </div>
-          </div>
-          <div className="w-[70%] mt-4 h-fit my-4 mx-auto flex flex-col">
-            <img
-              src={defaultBookCover}
-              className="w-full h-[200px]"
-              alt="Book Cover"
-            />
-            <div className="flex flex-col w-full h-fit">
-              <div className="w-full flex justify-between items-center">
-                <div className="text-sm">Price</div>
-                <div className="text-sm">5.00</div>
-              </div>
-              <div className="w-full flex justify-between items-center">
-                <div className="text-sm">Quantity</div>
-                <div className="text-sm flex">
-                  <span className="mx-2">+</span>
-                  <span className="mx-2">1</span>
-                  <span className="mx-2">-</span>
-                </div>
-              </div>
-              <div className="w-full flex justify-between items-center">
-                <div className="text-sm">Total</div>
-                <div className="text-sm">5.00</div>
-              </div>
-            </div>
-          </div>
-          <button className="btn my-2 btn-success w-full btn-block ">
-            Go To Payment
-          </button>
+          ) : (
+            <></>
+          )}
         </div>
       )}
     </div>

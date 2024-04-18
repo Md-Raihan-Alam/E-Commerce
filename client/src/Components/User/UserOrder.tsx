@@ -1,15 +1,20 @@
-import DefaultProductPicture from "../../assets/default-book-cover.png";
 import { useEffect, useState } from "react";
 import url from "../../utils/url";
+import { useGlobalContext, GlobalContextTypes } from "../../context";
 import axios from "axios";
-const AllOrders = () => {
+const MyOrder = () => {
+  const context = useGlobalContext() as GlobalContextTypes;
+  const { getCookie } = context;
   const [orders, setOrders] = useState(null);
   const [nextPage, setNextPage] = useState(-1);
   const [prevPage, setPrevPage] = useState(-1);
-  const getAllOrders = async () => {
+  const getMyOrder = async () => {
     try {
-      const result = await axios.get(`${url}/api/v1/orders/`);
-      console.log(result.data.result);
+      const token = getCookie("token");
+      const result = await axios.post(`${url}/api/v1/orders/myorder`, {
+        token,
+      });
+      // console.log(result.data.result);
       setOrders(result.data.result);
       setNextPage(result.data.next.page);
       setPrevPage(result.data.previous.page);
@@ -18,14 +23,14 @@ const AllOrders = () => {
     }
   };
   useEffect(() => {
-    getAllOrders();
+    getMyOrder();
   }, []);
   const setPage = async (page: Number) => {
     // setLoading(true);
     let setPage = String(page);
     try {
       const result = await axios.get(
-        `${url}/api/v1/orders?page=${setPage}&limit=1`
+        `${url}/api/v1/orders/myorder?page=${setPage}&limit=1`
       );
       setOrders(result.data.result);
       setNextPage(result.data.next.page);
@@ -46,9 +51,6 @@ const AllOrders = () => {
       <table className="table table-info table-striped">
         <thead>
           <tr>
-            <th scope="col" className="whitespace-nowrap">
-              Customer
-            </th>
             <th scope="col" className="whitespace-nowrap ">
               Product
             </th>
@@ -56,7 +58,7 @@ const AllOrders = () => {
               Total
             </th>
             <th scope="col" className="whitespace-nowrap">
-              Paid Status
+              Payment Status
             </th>
             <th scope="col" className="whitespace-nowrap">
               Order Date
@@ -67,18 +69,6 @@ const AllOrders = () => {
           {orders.map((e: any) => {
             return (
               <tr key={e.id}>
-                <td className="whitespace-nowrap flex justify-start items-center">
-                  <img
-                    src={
-                      e.userImage === ""
-                        ? DefaultProductPicture
-                        : `${url}${e.userImage}`
-                    }
-                    alt={e.userName}
-                    className="w-[50px] h-[50px] object-cover rounded-full mr-2"
-                  />
-                  <div>{e.userName}</div>
-                </td>
                 <td className="whitespace-nowrap">
                   <select className="form-select">
                     <option>
@@ -102,8 +92,6 @@ const AllOrders = () => {
               </tr>
             );
           })}
-
-          {/* Add more rows with different data */}
         </tbody>
       </table>
       <div className="flex my-2 justify-center w-full h-full items-center">
@@ -140,4 +128,4 @@ const AllOrders = () => {
     </div>
   );
 };
-export default AllOrders;
+export default MyOrder;

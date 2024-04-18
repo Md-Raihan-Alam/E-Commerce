@@ -2,10 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import url from "../../utils/url";
 import { useGlobalContext, GlobalContextTypes } from "../../context";
-const ProductInfos = (props: object) => {
-  let itemsInfo = props.props;
+
+const ProductInfos = () => {
+  // getProduct(id);
   const context = useGlobalContext() as GlobalContextTypes;
-  const { getCookie } = context;
+  const { getCookie, editProduct } = context;
   const [productFound, setProductFound] = useState(false);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -18,57 +19,59 @@ const ProductInfos = (props: object) => {
   const [imageUpdate, setImageUpdate] = useState(false);
   const fileInputRef = useRef(null);
   useEffect(() => {
-    if (itemsInfo != undefined) {
+    console.log("HERE");
+    if (editProduct !== undefined && editProduct !== null) {
       setProductFound(true);
-      setName(itemsInfo.name || "");
-      setPrice(itemsInfo.price || "");
-      setDescription(itemsInfo.description || "");
-      setFreeDelivery(itemsInfo.freeDelivery || false);
-      setTotalInventory(itemsInfo.inventory || "");
-      setRating(itemsInfo.averageRating || "");
-      setAuthor(itemsInfo.author || "");
+      setName(editProduct.name || "");
+      setPrice(editProduct.price || "");
+      setDescription(editProduct.description || "");
+      setFreeDelivery(editProduct.freeDelivery || false);
+      setTotalInventory(editProduct.inventory || "");
+      setRating(editProduct.averageRating || "");
+      setAuthor(editProduct.author || "");
     }
-    console.log(productFound);
-  }, [itemsInfo]);
+  }, [editProduct]);
   const updateSubmit = async () => {
-    const token = getCookie("token");
-    const inventory = parseInt(totalInventory, 10);
-    const averageRating = parseFloat(rating);
-    if (!imageUpdate) {
-      setImage(itemsInfo.image);
-    }
-    try {
-      await axios.patch(
-        `${url}/api/v1/product/${itemsInfo._id}`,
-        {
-          id: itemsInfo._id,
-          name,
-          price,
-          description,
-          image,
-          freeDelivery,
-          inventory,
-          averageRating,
-          author,
-          token,
-        },
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
+    if (editProduct !== undefined && editProduct !== null) {
+      const token = getCookie("token");
+      const inventory = parseInt(totalInventory, 10);
+      const averageRating = parseFloat(rating);
+      if (!imageUpdate) {
+        setImage(editProduct.image);
+      }
+      try {
+        await axios.patch(
+          `${url}/api/v1/product/${editProduct._id}`,
+          {
+            id: editProduct._id,
+            name,
+            price,
+            description,
+            image,
+            freeDelivery,
+            inventory,
+            averageRating,
+            author,
+            token,
           },
-        }
-      );
-      setName("");
-      setPrice("");
-      setDescription("");
-      setImage(null);
-      setFreeDelivery(false);
-      setTotalInventory("");
-      setRating("");
-      setAuthor("");
-      fileInputRef.current.value = null;
-    } catch (error: any) {
-      console.log(error);
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        setName("");
+        setPrice("");
+        setDescription("");
+        setImage(null);
+        setFreeDelivery(false);
+        setTotalInventory("");
+        setRating("");
+        setAuthor("");
+        fileInputRef.current.value = null;
+      } catch (error: any) {
+        console.log(error);
+      }
     }
   };
   const handleSubmit = async () => {

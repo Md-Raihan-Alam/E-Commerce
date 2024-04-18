@@ -4,17 +4,13 @@ const {
   authneticateUser,
   authorizePermissions,
 } = require("../middleware/authentication");
+const pagination = require("../middleware/pagination");
+const Order = require("../models/Order");
 const {
   getAllOrders,
-  getSingleOrder,
   getCurrentUserOrders,
   createOrder,
-  updateOrder,
 } = require("../controllers/orderController");
-router
-  .route("/")
-  .post(createOrder)
-  .get(authorizePermissions("admin"), getAllOrders);
-router.route("/myorder").get(getCurrentUserOrders);
-router.route("/:id").get(getSingleOrder).patch(updateOrder);
+router.route("/").post(createOrder).get(pagination(Order), getAllOrders);
+router.route("/myorder").post(getCurrentUserOrders);
 module.exports = router;

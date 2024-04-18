@@ -1,6 +1,6 @@
 import closeSVG from "../../assets/close.svg";
 import defaultPicture from "../../assets/default-book-cover.png";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useGlobalContext, GlobalContextTypes } from "../../context";
 import uselocalState from "../../utils/localState";
@@ -10,6 +10,9 @@ import axios from "axios";
 const Dashboard = () => {
   const context = useGlobalContext() as GlobalContextTypes;
   const { user } = context;
+  const [nextPage, setNextPage] = useState(-1);
+
+  const [prevPage, setPrevPage] = useState(-1);
   const { isLoading, setLoading } = uselocalState();
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(0);
@@ -31,11 +34,28 @@ const Dashboard = () => {
     setLoading(true);
     try {
       const { data } = await axios.get(`${url}/api/v1/product/`);
-      setAllProducts(data.product);
+      setAllProducts(data.result);
+      setNextPage(data.next.page);
+      setPrevPage(data.previous.page);
     } catch (error) {
       console.log(error);
     }
 
+    setLoading(false);
+  };
+  const setPage = async (page: Number) => {
+    setLoading(true);
+    let setPage = String(page);
+    try {
+      const { data } = await axios.get(
+        `${url}/api/v1/product?page=${setPage}&limit=5`
+      );
+      setAllProducts(data.result);
+      setNextPage(data.next.page);
+      setPrevPage(data.previous.page);
+    } catch (error) {
+      console.log(error);
+    }
     setLoading(false);
   };
   const handleApplyFilter = async () => {
@@ -244,6 +264,37 @@ const Dashboard = () => {
                 </div>
               </Link>
             ))}
+          </div>
+          <div className="flex my-2 justify-center w-full h-full items-center">
+            {prevPage !== -1 && (
+              <button
+                type="button"
+                onClick={() => setPage(prevPage)}
+                className="cursor-pointer focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+              >
+                Previous
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={true}
+              className="cursor-pointer py-2.5 px-5 me-2 mb-2 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+            >
+              {prevPage === -1 && nextPage === -1
+                ? 1
+                : prevPage === -1 && nextPage !== -1
+                ? nextPage - 1
+                : prevPage + 1}
+            </button>
+            {nextPage !== -1 && (
+              <button
+                type="button"
+                onClick={() => setPage(nextPage)}
+                className="cursor-pointer focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+              >
+                Next
+              </button>
+            )}
           </div>
         </div>
       </div>

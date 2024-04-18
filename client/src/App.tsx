@@ -9,6 +9,7 @@ import ChangePassword from "./Components/PasswordComponent/Change-Password";
 import ResetPassword from "./Components/PasswordComponent/Reset-Password";
 import Product from "./Components/Product/Product";
 import UserDashboard from "./Components/User/UserDashboard";
+import Order from "./Order/order";
 import ProtectedRoute from "./Components/Navbar/ProtectedRoute";
 import { useGlobalContext, GlobalContextTypes } from "./context";
 import { useEffect } from "react";
@@ -44,9 +45,14 @@ function App() {
             path="product/:productDetails"
             element={<ProtectedRoute element={<Product />} />}
           />
+
           <Route
             path="user/showme"
             element={<ProtectedRoute element={<UserDashboard />} />}
+          />
+          <Route
+            path="Order"
+            element={<ProtectedRoute element={<Order />} />}
           />
         </Route>
       </Routes>

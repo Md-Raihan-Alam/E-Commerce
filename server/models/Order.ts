@@ -36,6 +36,8 @@ interface IOrder extends Document {
   orderItems: ISingleOrderItem[];
   status: "pending" | "failed" | "paid" | "delivered" | "canceled";
   user: Schema.Types.ObjectId;
+  userName: String;
+  userImage: String;
   clientSecret: string;
   paymentIntentId: string;
 }
@@ -56,13 +58,21 @@ const OrderSchema = new Schema<IOrder>(
     orderItems: [SingleOrderItemSchema],
     status: {
       type: String,
-      enum: ["pending", "failed", "paid", "delivered", "canceled"],
-      default: "pending",
+      // enum: ["pending", "failed", "paid", "delivered", "canceled"],
+      default: "paid",
     },
     user: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    userName: {
+      type: String,
+      requried: true,
+    },
+    userImage: {
+      type: String,
+      default: "",
     },
     clientSecret: {
       type: String,

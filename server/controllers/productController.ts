@@ -39,8 +39,7 @@ const generateUniqueFilename = (originalFilename: string) => {
   return `${timestamp}_${randomString}_${sanitizedOriginalFilename}${extension}`;
 };
 const getAllProduct = async (req: Request, res: Response) => {
-  const product = await Product.find({});
-  res.status(StatusCodes.OK).json({ product, count: product.length });
+  res.status(StatusCodes.OK).json(res.paginationResult);
 };
 const getRecentProducts = async (req: Request, res: Response) => {
   try {

@@ -1,5 +1,7 @@
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const User = require("../models/User");
+const stripe = require("stripe")(process.env.STR_KEY);
 import { StatusCodes } from "http-status-codes";
 const {
   BadRequestError,
@@ -7,10 +9,17 @@ const {
   NotFoundError,
 } = require("../errors");
 const { checkPermissionUser } = require("../utils");
+const { isTokenValid } = require("../utils/index");
 import { Request, Response } from "express";
+interface Results {
+  next?: { page: number; limit: number };
+  previous?: { page: number; limit: number };
+  result: any[] | null;
+}
 interface CartItem {
-  product: string;
+  _id: string;
   amount: number;
+  orderedQuantity: number;
 }
 interface OrderItem {
   amount: number;
@@ -33,84 +42,152 @@ const fakeStripeAPI = async ({
   amount: number;
   currency: string;
 }) => {
-  const client_secret = "someRandomValue";
-  return { client_secret, amount };
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount,
+      currency: currency,
+    });
+
+    return { clientSecret: paymentIntent.client_secret, amount };
+  } catch (error: any) {
+    console.log(error);
+  }
 };
 const createOrder = async (req: AuthRequest, res: Response) => {
-  const { item: cartItems, deliveryFee } = req.body;
-  if (!cartItems || cartItems.length < 1) {
-    throw new BadRequestError("No cart items provided");
-  }
-  if (!deliveryFee) {
-    throw new BadRequestError("Please provide delivery fee");
-  }
-  let orderItems: OrderItem[] = [];
-  let subtotal = 0;
-  for (const item of cartItems as CartItem[]) {
-    const dbProduct = await Product.findOne({ _id: item.product });
-    if (!dbProduct) {
-      throw new NotFoundError(`No product with itd :${item.product}`);
+  // console.log(req.body);.
+
+  try {
+    const {
+      cart: cartItems,
+      totalPrice,
+      token: checkUser,
+      deliveryCost,
+    } = req.body;
+    const decoded = isTokenValid(checkUser);
+    if (!cartItems || cartItems.length < 1) {
+      throw new BadRequestError("No cart items provided");
     }
-    const { name, price, image, _id } = dbProduct;
-    const singleOrderItem: OrderItem = {
-      amount: item.amount,
-      name,
-      price,
-      image,
-      product: _id,
-    };
-    orderItems = [...orderItems, singleOrderItem];
-    subtotal += item.amount * price;
+    if (!totalPrice) {
+      throw new BadRequestError("Please provide delivery fee");
+    }
+
+    let orderItems: OrderItem[] = [];
+    let subtotal = 0;
+
+    // Iterate through each item in the cart
+    for (const item of cartItems as CartItem[]) {
+      const dbProduct = await Product.findOne({ _id: item._id });
+      if (!dbProduct) {
+        throw new NotFoundError(`No product with id: ${item._id}`);
+      }
+
+      const { name, price, image, _id, inventory } = dbProduct;
+
+      // Calculate ordered quantity and update inventory
+      const orderedQuantity = Math.min(item.orderedQuantity, inventory);
+      const updatedInventory = inventory - orderedQuantity;
+      // console.log(dbProduct);
+      // console.log(decoded);
+      // console.log(deliveryCost);
+
+      // Update product inventory
+      await Product.findByIdAndUpdate(_id, { inventory: updatedInventory });
+
+      // Create order item
+      const singleOrderItem: OrderItem = {
+        amount: orderedQuantity,
+        name,
+        price,
+        image,
+        product: _id,
+      };
+
+      orderItems.push(singleOrderItem);
+      subtotal += orderedQuantity * price;
+    }
+    // console.log("Subtotal =" + subtotal);
+
+    const finalPrice = subtotal + deliveryCost;
+    // console.log("ok");
+    const result = await fakeStripeAPI({
+      amount: finalPrice,
+      currency: "usd",
+    });
+    // console.log(result);
+    const order = await Order.create({
+      orderItems,
+      total: result!.amount,
+      subtotal,
+      deliveryFee: deliveryCost,
+      clientSecret: result!.clientSecret,
+      user: decoded.userId,
+      userName: decoded.name,
+      userImage: decoded.image,
+    });
+    // console.log("ok");
+    res.status(StatusCodes.CREATED).json({ order });
+  } catch (error: any) {
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
   }
-  const total = deliveryFee + subtotal;
-  const paymentIntent = await fakeStripeAPI({
-    amount: total,
-    currency: "usd",
-  });
-  const order = await Order.create({
-    orderItems,
-    total,
-    subtotal,
-    deliveryFee,
-    clientSecret: paymentIntent.client_secret,
-    user: req.user.userId,
-  });
-  res.status(StatusCodes.CREATED).json({ order });
 };
+
 const getAllOrders = async (req: Request, res: Response) => {
-  const order = await Order.find({});
-  res.status(StatusCodes.OK).json({ order, count: order.length });
-};
-const getSingleOrder = async (req: AuthRequest, res: Response) => {
-  const { id: orderId } = req.params;
-  const order = await Order.findOne({ _id: orderId });
-  if (!order) {
-    throw new NotFoundError(`No order with id: ${orderId}`);
-  }
-  checkPermissionUser(req.user, order.user);
-  res.status(StatusCodes.OK).json({ order });
+  res.status(StatusCodes.OK).json(res.paginationResult);
 };
 const getCurrentUserOrders = async (req: AuthRequest, res: Response) => {
-  const order = await Order.findOne({ user: req.user.userId });
-  res.status(StatusCodes.OK).json({ order, count: order.length });
-};
-const updateOrder = async (req: AuthRequest, res: Response) => {
-  const { id: orderId } = req.params;
-  const { paymentIntentId } = req.body;
-  const order = await Order.findOne({ _id: orderId });
-  if (!order) {
-    throw new NotFoundError(`No order with id:${orderId}`);
+  const { token: Token } = req.body;
+  const decoded = isTokenValid(Token);
+  let page = 1;
+  let limit = 5;
+  if (req.query.page !== undefined) {
+    page = Number(req.query.page);
   }
-  checkPermissionUser(req.user, order.user);
-  order.paymentIntentId = paymentIntentId;
-  order.status = "paid";
-  await order.save();
-  res.status(StatusCodes.OK).json({ order });
+  if (req.query.limit !== undefined) {
+    limit = Number(req.query.limit);
+  }
+  let results: Results = { result: null };
+  let startIndex = (page - 1) * limit;
+  let endIndex = page * limit;
+  let endIndexNum = await Order.findOne({ user: decoded.userId })
+    .countDocuments()
+    .exec();
+  if (endIndex < endIndexNum) {
+    results.next = {
+      page: page + 1,
+      limit: limit,
+    };
+  } else {
+    results.next = {
+      page: -1,
+      limit: limit,
+    };
+  }
+  if (startIndex > 0) {
+    results.previous = {
+      page: page - 1,
+      limit: limit,
+    };
+  } else {
+    results.previous = {
+      page: -1,
+      limit: limit,
+    };
+  }
+  try {
+    results.result = await Order.find({ user: decoded.userId })
+      .select("-password  -subtotal -clientSecret  -updatedAt")
+      .limit(limit)
+      .skip(startIndex)
+      .exec();
+    return res.status(StatusCodes.OK).json(results);
+  } catch (error: any) {
+    console.log(error);
+  }
 };
 module.exports = {
   getAllOrders,
-  getSingleOrder,
   getCurrentUserOrders,
   createOrder,
-  updateOrder,
 };
