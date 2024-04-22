@@ -42,6 +42,11 @@ const Navbar = () => {
                   onClick={showOrderOption}
                   className="mr-3 cursor-pointer"
                 />
+                {cart.length > 0 && (
+                  <div className="w-[15px] relative right-5 h-[15px] bg-green-700 text-[10px] rounded-full grid place-items-center font-bold text-white">
+                    {cart.length}
+                  </div>
+                )}
                 <div className="flex">
                   {user.image === "" ? (
                     <img

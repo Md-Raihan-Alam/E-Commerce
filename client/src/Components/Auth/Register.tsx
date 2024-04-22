@@ -34,13 +34,22 @@ const Register = () => {
         `${url}/api/v1/auth/register`,
         formData
       );
-      setUserInfo({ name: "", email: "", password: "" });
+      console.log(data.msg);
+      if (
+        data.msg === "Please provide all value" ||
+        data.msg === "Name cannot be more than 20 character" ||
+        data.msg === "Password must be greater than 6 character"
+      ) {
+        showAlert({ type: "danger", text: data.msg });
+      } else {
+        setUserInfo({ name: "", email: "", password: "" });
 
-      showAlert({
-        text: data.msg,
-        type: "success",
-      });
-      hideAlert();
+        showAlert({
+          text: data.msg,
+          type: "success",
+        });
+        hideAlert();
+      }
     } catch (error: any) {
       console.log(error);
       const { msg } = error.response?.data || "There was an error";
@@ -74,6 +83,7 @@ const Register = () => {
               placeholder="Firstname Lastname"
               autoComplete="off"
               autoCorrect="off"
+              required={true}
               autoFocus={true}
               value={userInfo.name}
               name="name"
@@ -88,6 +98,7 @@ const Register = () => {
               placeholder="name@company.com"
               autoComplete="off"
               autoCorrect="off"
+              required={true}
               value={userInfo.email}
               name="email"
               onChange={(e) => handleChange(e)}
@@ -101,6 +112,7 @@ const Register = () => {
               placeholder="******"
               autoComplete="off"
               autoCorrect="off"
+              required={true}
               name="password"
               value={userInfo.password}
               onChange={(e) => handleChange(e)}

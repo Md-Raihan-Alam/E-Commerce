@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState, ChangeEvent, FormEvent, useEffect } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
 import { useGlobalContext, GlobalContextTypes } from "../../context";
 import uselocalState from "../../utils/localState";
 import Loading from "../../utils/Loading";
@@ -24,15 +24,19 @@ const Login = () => {
     setLoading(true);
     try {
       const { data } = await axios.post(`${url}/api/v1/auth/login`, userInfo);
-      setCookie(data.token);
-      saveUser(data.user);
-      setUserInfo({ email: "", password: "" });
-      showAlert({
-        type: "success",
-        text: `Welcom ${data.user.name}. Redirection to dashboad...`,
-      });
-      hideAlert();
-      history("/");
+      console.log(data.msg);
+      if (data.msg === "Wrong email/password") {
+        showAlert({
+          type: "danger",
+          text: data.msg,
+        });
+      } else {
+        setCookie(data.token);
+        saveUser(data.user);
+        setUserInfo({ email: "", password: "" });
+        hideAlert();
+        history("/");
+      }
     } catch (e: any) {
       showAlert({
         type: "danger",

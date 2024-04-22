@@ -1,6 +1,6 @@
 import closeSVG from "../../assets/close.svg";
 import defaultPicture from "../../assets/default-book-cover.png";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useGlobalContext, GlobalContextTypes } from "../../context";
 import uselocalState from "../../utils/localState";
