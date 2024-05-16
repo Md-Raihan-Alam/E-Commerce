@@ -92,14 +92,18 @@ const Dashboard = () => {
     setShowMenu(!showMenu);
   };
   if (isLoading) {
-    <div className="w-full h-[92vh] flex justify-center items-center">
-      <Loading />
-    </div>;
+    return (
+      <div className="w-full h-[92vh] flex justify-center items-center">
+        <Loading />
+      </div>
+    );
   }
   if (allProducts === null) {
-    <div className="w-full h-[92vh] flex justify-center items-center">
-      <div className="alert alert-info">We have no product for now!</div>
-    </div>;
+    return (
+      <div className="w-full h-[92vh] flex justify-center items-center">
+        <div className="alert alert-info">We have no product for now!</div>
+      </div>
+    );
   }
   return (
     <div className="flex h-[92vh]">

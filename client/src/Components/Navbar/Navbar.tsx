@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useGlobalContext, GlobalContextTypes } from "../../context";
 import cartSVG from "../../assets/cart.svg";
+import closeSVG from "../../assets/close.svg";
 import defaultBookCover from "../../assets/default-book-cover.png";
 import defaultCustomerPicture from "../../assets/Default-Customer-Picture.jpg";
 import url from "../../utils/url";
@@ -26,7 +27,7 @@ const Navbar = () => {
   };
   return (
     <div className="relative">
-      <nav className="navbar sticky-top bg-body-tertiary border-black border-b">
+      <nav className="navbar sticky-top top-0 z-50 bg-body-tertiary border-black border-b">
         <div className="container-fluid">
           <Link to="/" className="navbar-brand">
             Book Shop
@@ -85,8 +86,17 @@ const Navbar = () => {
       </nav>
       {showOrder && (
         <div
-          className={`w-[300px] fixed overflow-auto h-[92vh] right-0 bg-white z-10`}
+          className={`w-[300px] shadow-sm fixed pt-16 top-0 overflow-auto h-screen right-0 bg-white z-10`}
         >
+          <div className="w-full flex justify-end items-center">
+            <img
+              src={closeSVG}
+              width={20}
+              height={20}
+              className="mr-5 cursor-pointer"
+              onClick={showOrderOption}
+            />
+          </div>
           {cart && cart.length ? (
             cart.map((item: any) => {
               return (

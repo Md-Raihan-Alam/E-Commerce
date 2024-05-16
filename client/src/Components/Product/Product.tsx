@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import Loading from "../../utils/Loading";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart, removeFromCart } from "../../store/slices/cart-slice";
+
 interface ProductType {
   id: string;
   name: string;
@@ -25,6 +26,9 @@ const Product = () => {
   const [recentProduct, setRecentProducts] = useState([]);
   const [totalQuantity, setTotalQuantity] = useState(1);
   const { productDetails } = useParams();
+  const { cart } = useSelector((state) => state);
+  const dispatch = useDispatch();
+
   const getSingleProduct = async (id: string | null | undefined) => {
     setLoading(true);
     try {
@@ -38,26 +42,48 @@ const Product = () => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     getSingleProduct(productDetails);
-  }, []);
-  const dispatch = useDispatch();
+  }, [productDetails]);
+
   const handleAddToCart = () => {
-    if (product !== null) product.orderedQuantity = totalQuantity;
-    dispatch(addToCart(product));
+    if (product !== null) {
+      product.orderedQuantity = totalQuantity;
+      dispatch(addToCart(product));
+    }
   };
+
   const handleRemoveFromCart = () => {
-    dispatch(removeFromCart(product.id));
+    if (product !== null) {
+      dispatch(removeFromCart(product.id));
+    }
   };
 
   const onInc = () => {
-    if (totalQuantity < product?.inventory)
+    if (totalQuantity < product?.inventory) {
       setTotalQuantity((prevState) => prevState + 1);
+    }
   };
+
   const onDec = () => {
-    if (totalQuantity > 1) setTotalQuantity((prevState) => prevState - 1);
+    if (totalQuantity > 1) {
+      setTotalQuantity((prevState) => prevState - 1);
+    }
   };
-  const { cart } = useSelector((state) => state);
+
+  const findCartItem = (id: string) => {
+    return cart.find((item: ProductType) => item.id === id);
+  };
+
+  const cartItem = findCartItem(product?.id);
+
+  useEffect(() => {
+    if (!cartItem) {
+      setTotalQuantity(1);
+    }
+  }, [cartItem]);
+
   if (isLoading || product === null) {
     return (
       <div className="w-full h-screen flex justify-center items-center">
@@ -65,6 +91,7 @@ const Product = () => {
       </div>
     );
   }
+
   if (recentProduct === undefined) {
     return (
       <div className="w-full h-screen flex justify-center items-center">
@@ -72,9 +99,10 @@ const Product = () => {
       </div>
     );
   }
+
   return (
     <div className="w-full h-screen">
-      <div className="w-full h-fit my-10 flex  justify-around items-center">
+      <div className="w-full h-fit my-10 flex justify-around items-center">
         <div className="flex-1 flex justify-center items-center">
           <img
             src={product ? `${url}${product.image}` : defaultPicture}
@@ -85,7 +113,7 @@ const Product = () => {
           />
         </div>
         <div className="flex-1 px-2 w-full sm:text-[18px] flex flex-col justify-around items-start">
-          <div className="text-xl my-2 sm:text-3xl fontbold">
+          <div className="text-xl my-2 sm:text-3xl font-bold">
             {product.name}
           </div>
           <div className="text-base my-2 sm:text-lg font-semibold text-secondary">
@@ -101,21 +129,17 @@ const Product = () => {
                 <button
                   onClick={onInc}
                   className="btn btn-primary ml-2"
-                  disabled={
-                    cart.some((item) => item.id === product.id) ? true : false
-                  }
+                  disabled={!!cartItem}
                 >
                   +
                 </button>
                 <span className="w-[40px] sm:w-[100px] mx-2 h-[40px] flex rounded justify-center items-center bg-gray-300">
-                  {totalQuantity}
+                  {cartItem ? cartItem.orderedQuantity : totalQuantity}
                 </span>
                 <button
                   onClick={onDec}
                   className="btn btn-primary"
-                  disabled={
-                    cart.some((item) => item.id === product.id) ? true : false
-                  }
+                  disabled={!!cartItem}
                 >
                   -
                 </button>
@@ -138,24 +162,16 @@ const Product = () => {
             Rating: {product.averageRating}
           </div>
           <button
-            onClick={
-              cart.some((item) => item.id === product.id)
-                ? handleRemoveFromCart
-                : handleAddToCart
-            }
+            onClick={cartItem ? handleRemoveFromCart : handleAddToCart}
             className={`btn my-2 ${
-              cart.some((item) => item.id === product.id)
-                ? "btn-danger"
-                : "btn-primary"
+              cartItem ? "btn-danger" : "btn-primary"
             } text-sm sm:text-base`}
           >
-            {cart.some((item) => item.id === product.id)
-              ? "Remove from cart"
-              : "Add to cart"}
+            {cartItem ? "Remove from cart" : "Add to cart"}
           </button>
         </div>
       </div>
-      <div className=" px-2 my-2 text-justify">{product.description}</div>
+      <div className="px-2 my-2 text-justify">{product.description}</div>
       <div className="w-full my-4 h-fit py-5">
         <div className="w-full h-[100px] text-4xl font-semibold text-center">
           You may also like these books
@@ -171,6 +187,7 @@ const Product = () => {
                 cursor: "pointer",
               }}
               onClick={() => getSingleProduct(e._id)}
+              key={e._id}
             >
               <img
                 className="card-img-top w-[300px] h-[300px]"
@@ -192,4 +209,5 @@ const Product = () => {
     </div>
   );
 };
+
 export default Product;
