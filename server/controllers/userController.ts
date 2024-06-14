@@ -1,7 +1,7 @@
-const User = require("../models/User");
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import path from "path";
+const User = require("../models/User");
 const {
   BadRequestError,
   UnauthenticatedError,
@@ -9,6 +9,7 @@ const {
 } = require("../errors");
 const { checkPermissionUser, createTokenUser } = require("../utils");
 const { isTokenValid } = require("../utils/index");
+
 interface File {
   name: string;
   data: Buffer;
@@ -20,13 +21,16 @@ interface File {
   md5: string;
   mv: (path: string) => void;
 }
+
 interface Files {
   image: File;
 }
+
 interface AuthRequest extends Request {
   user?: any;
   files?: Files;
 }
+
 const generateUniqueFilename = (originalFilename: string) => {
   const timestamp = new Date().toISOString().replace(/[-:]/g, "");
   const randomString = Math.random().toString(36).substring(2, 8);
@@ -36,10 +40,11 @@ const generateUniqueFilename = (originalFilename: string) => {
 
   return `${timestamp}_${randomString}_${sanitizedOriginalFilename}${extension}`;
 };
+
 const getAllUsers = async (req: Request, res: Response) => {
-  // const users = await User.find({ role: "user" }).select("-password");
   res.status(StatusCodes.OK).json(res.paginationResult);
 };
+
 const getSingleUser = async (req: AuthRequest, res: Response) => {
   const user = await User.findOne({ _id: req.params.id }).select("-password");
   if (!user) {
@@ -48,6 +53,7 @@ const getSingleUser = async (req: AuthRequest, res: Response) => {
   checkPermissionUser(req.user, user._id);
   res.status(StatusCodes.OK).json({ user });
 };
+
 const showCurrentUser = async (req: AuthRequest, res: Response) => {
   const { token } = req.body;
   try {
@@ -61,28 +67,47 @@ const showCurrentUser = async (req: AuthRequest, res: Response) => {
       .json({ operation: "unsuccess", err: error });
   }
 };
+
 const updateUser = async (req: AuthRequest, res: Response) => {
   try {
     const { token, name, address } = req.body;
     const decoded = isTokenValid(token);
     const productImage = req.files?.image;
-    if (!productImage?.mimetype.startsWith("image")) {
-      throw new BadRequestError("Please upload image");
+    if (
+      productImage !== undefined &&
+      !productImage.mimetype.startsWith("image")
+    ) {
+      return res.status(StatusCodes.OK).json({ msg: "Please upload image" });
     }
+
     const maxSize = 1024 * 2014 * 10;
-    if (productImage.size > maxSize) {
-      throw new BadRequestError("Please upload image smaller than 10MB");
+    if (productImage !== undefined && productImage.size > maxSize) {
+      return res
+        .status(StatusCodes.OK)
+        .json({ msg: "Please upload image smaller than 10MB" });
     }
-    const uniqueProfilePictureName = generateUniqueFilename(productImage.name);
-    const imagePath = path.join(
-      __dirname,
-      "../public/uploads/" + `${uniqueProfilePictureName}`
-    );
-    await productImage.mv(imagePath);
+
+    let uniqueProfilePictureName: string | undefined;
+    let imagePath: string | undefined;
+    if (productImage !== undefined) {
+      uniqueProfilePictureName = generateUniqueFilename(productImage.name);
+      imagePath = path.join(
+        __dirname,
+        "../public/uploads/",
+        uniqueProfilePictureName
+      );
+    }
+
+    if (productImage !== undefined && imagePath !== undefined) {
+      await productImage.mv(imagePath);
+    }
+
     const user = await User.findOne({ _id: decoded.userId });
     user.address = address;
     user.name = name;
-    user.image = `/uploads/${uniqueProfilePictureName}`;
+    if (productImage !== undefined && uniqueProfilePictureName !== undefined) {
+      user.image = `/uploads/${uniqueProfilePictureName}`;
+    }
     await user.save();
     const tokenUser = createTokenUser(user);
     res
@@ -94,6 +119,7 @@ const updateUser = async (req: AuthRequest, res: Response) => {
       .json({ error: error.message });
   }
 };
+
 const updateUserPassword = async (req: AuthRequest, res: Response) => {
   const { token, password } = req.body;
   const decoded = isTokenValid(token);
@@ -109,6 +135,7 @@ const updateUserPassword = async (req: AuthRequest, res: Response) => {
   await user.save();
   res.status(StatusCodes.OK).json({ msg: "Success! Password Updated" });
 };
+
 module.exports = {
   getAllUsers,
   getSingleUser,

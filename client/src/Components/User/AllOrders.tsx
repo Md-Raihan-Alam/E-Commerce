@@ -2,11 +2,15 @@ import DefaultProductPicture from "../../assets/default-book-cover.png";
 import { useEffect, useState } from "react";
 import url from "../../utils/url";
 import axios from "axios";
+import uselocalState from "../../utils/localState";
+import Loading from "../../utils/Loading";
 const AllOrders = () => {
+  const { isLoading, setLoading } = uselocalState();
   const [orders, setOrders] = useState(null);
   const [nextPage, setNextPage] = useState(-1);
   const [prevPage, setPrevPage] = useState(-1);
   const getAllOrders = async () => {
+    setLoading(true);
     try {
       const result = await axios.get(`${url}/api/v1/orders/`);
       console.log(result.data.result);
@@ -16,12 +20,13 @@ const AllOrders = () => {
     } catch (error: any) {
       console.log(error);
     }
+    setLoading(false);
   };
   useEffect(() => {
     getAllOrders();
   }, []);
   const setPage = async (page: Number) => {
-    // setLoading(true);
+    setLoading(true);
     let setPage = String(page);
     try {
       const result = await axios.get(
@@ -33,7 +38,15 @@ const AllOrders = () => {
     } catch (error) {
       console.log(error);
     }
+    setLoading(false);
   };
+  if (isLoading) {
+    return (
+      <div className="w-full h-[92vh] flex justify-center items-center">
+        <Loading />
+      </div>
+    );
+  }
   if (orders === null) {
     return (
       <div className="w-full h-[70vh] flex justify-center items-center">

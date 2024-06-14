@@ -1,36 +1,16 @@
 import { useSelector } from "react-redux";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import Loading from "../utils/Loading";
+import { useReactToPrint } from "react-to-print";
 import { useGlobalContext, GlobalContextTypes } from "../context";
 import DefaultProductPicture from "../assets/default-book-cover.png";
 import url from "../utils/url";
 import axios from "axios";
 const Order = () => {
-  const printTable = () => {
-    const printableContent = document.getElementById("ordered-items-table");
-    if (printableContent) {
-      const tableWindow = window.open("", "_blank");
-      if (tableWindow) {
-        tableWindow.document.write("<html><head><title>Ordered Items</title>");
-        // Embedding CSS styles
-        tableWindow.document.write(
-          "<style>table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }</style>"
-        );
-        tableWindow.document.write("</head><body>");
-        tableWindow.document.write("<h1>Ordered Items</h1>");
-        tableWindow.document.write(printableContent.outerHTML);
-        tableWindow.document.write("</body></html>");
-        tableWindow.document.close();
-        tableWindow.print();
-      } else {
-        console.error("Failed to open print window");
-      }
-    } else {
-      console.error("Printable content not found");
-    }
-  };
-
+  const componentRef = useRef();
+  const handlePrint = useReactToPrint({
+    content: () => componentRef.current,
+  });
   const { cart } = useSelector((state) => state);
   const [totalPrice, setTotalPrice] = useState(0);
   const [cardNumber, setCardNumber] = useState("");
@@ -96,68 +76,73 @@ const Order = () => {
   }
   if (success) {
     return (
-      <div className="w-full h-fit overflow-x-auto flex flex-col justify-center  items-center">
-        <div className="my-2 font-semibold text-5xl py-2">Ordered Items</div>
-        <div className="w-11/12">
-          <table
-            id="ordered-items-table"
-            className="table  table-primary table-striped"
-          >
-            <thead>
-              <tr>
-                <th scope="col" className="whitespace-nowrap">
-                  Book Image
-                </th>
-                <th scope="col" className="whitespace-nowrap">
-                  Book Name
-                </th>
-                <th scope="col" className="whitespace-nowrap">
-                  Price
-                </th>
-                <th scope="col" className="whitespace-nowrap">
-                  Ordered Quantity
-                </th>
-                <th scope="col" className="whitespace-nowrap">
-                  Total Price
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {orderedItems!.map((item: any) => {
-                return (
-                  <tr key={item._id}>
-                    <td className="whitespace-nowrap">
-                      <Link to={`/product/${item._id}`}>
-                        <img
-                          src={
-                            item.image === ""
-                              ? DefaultProductPicture
-                              : `${url}${item.image}`
-                          }
-                          alt="Book Cover"
-                          className="w-[50px] h-[50px] object-cover rounded-full"
-                        />
-                      </Link>
-                    </td>
-                    <td className="whitespace-nowrap">{item.name}</td>
-                    <td className="whitespace-nowrap">${item.price}</td>
-                    <td className="whitespace-nowrap">{item.amount}</td>
-                    <td className="whitespace-nowrap">
-                      ${item.amount * item.price}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <div className="w-full flex justify-center items-center">
-            <button
-              onClick={printTable}
-              className="bg-green-500 text-white font-semibold py-2 px-4 rounded mb-4"
+      <div>
+        <div
+          ref={componentRef}
+          className="w-full h-fit overflow-x-auto flex flex-col justify-center  items-center"
+        >
+          <div className="my-2 font-semibold text-5xl py-2">Ordered Items</div>
+          <div className="w-11/12">
+            <table
+              id="ordered-items-table"
+              className="table  table-primary table-striped"
             >
-              Print Data
-            </button>
+              <thead>
+                <tr>
+                  <th scope="col" className="whitespace-nowrap">
+                    Book Image
+                  </th>
+                  <th scope="col" className="whitespace-nowrap">
+                    Book Name
+                  </th>
+                  <th scope="col" className="whitespace-nowrap">
+                    Price
+                  </th>
+                  <th scope="col" className="whitespace-nowrap">
+                    Ordered Quantity
+                  </th>
+                  <th scope="col" className="whitespace-nowrap">
+                    Total Price
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {orderedItems!.map((item: any) => {
+                  return (
+                    <tr key={item._id}>
+                      <td className="whitespace-nowrap">
+                        <Link to={`/product/${item._id}`}>
+                          <img
+                            src={
+                              item.image === ""
+                                ? DefaultProductPicture
+                                : `${url}${item.image}`
+                            }
+                            alt="Book Cover"
+                            className="w-[50px] h-[50px] object-cover rounded-full"
+                          />
+                        </Link>
+                      </td>
+                      <td className="whitespace-nowrap">{item.name}</td>
+                      <td className="whitespace-nowrap">${item.price}</td>
+                      <td className="whitespace-nowrap">{item.amount}</td>
+                      <td className="whitespace-nowrap">
+                        ${item.amount * item.price}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
+        </div>
+        <div className="w-full flex justify-center items-center">
+          <button
+            onClick={handlePrint}
+            className="bg-green-500 text-white font-semibold py-2 px-4 rounded mb-4"
+          >
+            Print Data
+          </button>
         </div>
       </div>
     );

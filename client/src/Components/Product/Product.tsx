@@ -49,8 +49,8 @@ const Product = () => {
 
   const handleAddToCart = () => {
     if (product !== null) {
-      product.orderedQuantity = totalQuantity;
-      dispatch(addToCart(product));
+      const updatedProduct = { ...product, orderedQuantity: totalQuantity };
+      dispatch(addToCart(updatedProduct));
     }
   };
 

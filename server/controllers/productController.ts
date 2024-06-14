@@ -149,11 +149,6 @@ const updateProduct = async (req: AuthRequest, res: Response) => {
 };
 const deleteProduct = async (req: Request, res: Response) => {
   try {
-    const { token } = req.body;
-    const decoded = isTokenValid(token);
-    if (decoded.role !== "admin") {
-      throw new UnauthenticatedError("User not allowed");
-    }
     const { id: productId } = req.params;
     const product = await Product.findById(productId);
     if (!product) {
@@ -170,42 +165,84 @@ const deleteProduct = async (req: Request, res: Response) => {
 };
 const createProduct = async (req: AuthRequest, res: Response) => {
   try {
-    // console.log(req.body);
-    // console.log(req.files);
-    const { token } = req.body;
+    const {
+      token,
+      name,
+      price,
+      description,
+      inventory,
+      averageRating,
+      author,
+    } = req.body;
+
     const decoded = isTokenValid(token);
     if (decoded.role !== "admin") {
-      throw new UnauthenticatedError("User not allowed");
+      return res.status(StatusCodes.OK).json({ msg: "You are not allowed" });
     }
+
+    if (
+      !name ||
+      !price ||
+      !description ||
+      !inventory ||
+      !averageRating ||
+      !author
+    ) {
+      const missingFields = [];
+      if (!name) missingFields.push("give product name");
+      if (!price) missingFields.push("price");
+      if (!description) missingFields.push("description");
+      if (!inventory) missingFields.push("inventory");
+      if (!averageRating) missingFields.push("averageRating");
+      if (!author) missingFields.push("author");
+      return res.status(StatusCodes.OK).json({
+        msg: `Fill up the missing information: ${missingFields.join(", ")}`,
+      });
+    }
+
+    if (name.length > 20) {
+      return res
+        .status(StatusCodes.OK)
+        .json({ msg: "Product name should not be more than 20 characters" });
+    }
+
+    if (description.length > 500) {
+      return res
+        .status(StatusCodes.OK)
+        .json({ msg: "Description should not be more than 500 characters" });
+    }
+
     if (req.files) {
-      const prdouctImage = req.files.image;
-      if (!prdouctImage.mimetype.startsWith("image")) {
+      const productImage = req.files.image;
+      if (!productImage.mimetype.startsWith("image")) {
         throw new BadRequestError("Please Upload Image");
       }
       const maxSize = 1024 * 1024 * 10;
-      if (prdouctImage.size > maxSize) {
+      if (productImage.size > maxSize) {
         throw new BadRequestError("Please upload image smaller than 10MB");
       }
-      const uniqueFilename = generateUniqueFilename(prdouctImage.name);
-      // const product
+      const uniqueFilename = generateUniqueFilename(productImage.name);
       const imagePath = path.join(
         __dirname,
         "../public/uploads/" + `${uniqueFilename}`
       );
-      await prdouctImage.mv(imagePath);
+      await productImage.mv(imagePath);
       req.body.image = `/uploads/${uniqueFilename}`;
-    } else req.body.image = "";
+    } else {
+      req.body.image = "";
+    }
 
     req.body.user = decoded.userId;
 
     await Product.create(req.body);
-    res.status(StatusCodes.OK).json("Product has been created");
+    res.status(StatusCodes.OK).json({ msg: "Product has been created" });
   } catch (error: any) {
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ error: error.message });
   }
 };
+
 module.exports = {
   getAllProduct,
   getSingleProduct,

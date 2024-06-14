@@ -4,6 +4,7 @@ import { useGlobalContext, GlobalContextTypes } from "../../context";
 import url from "../../utils/url";
 import uselocalState from "../../utils/localState";
 import axios from "axios";
+import Loading from "../../utils/Loading";
 const UserInfo = () => {
   const history = useNavigate();
   const { alert, showAlert, isLoading, setLoading, hideAlert } =
@@ -32,9 +33,11 @@ const UserInfo = () => {
           },
         }
       );
+      // console.log(data);
       showAlert({ text: data.msg, type: "success" });
       saveUser(data.user);
     } catch (error: any) {
+      console.log(error);
       showAlert({ text: error.msg || "Error occures", type: "danger" });
     }
     setTimeout(() => {
@@ -53,6 +56,13 @@ const UserInfo = () => {
     const file = e.target.files[0];
     setImage(file);
   };
+  if (isLoading === true) {
+    return (
+      <div className="w-full h-[92vh] flex justify-center items-center">
+        <Loading />
+      </div>
+    );
+  }
   return (
     <div className="container mt-5">
       <div className="row">

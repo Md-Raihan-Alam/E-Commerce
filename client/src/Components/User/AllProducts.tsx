@@ -7,6 +7,7 @@ import uselocalState from "../../utils/localState";
 import editSVG from "../../assets/edit.svg";
 import deleteSVG from "../../assets/delete.svg";
 import { useGlobalContext, GlobalContextTypes } from "../../context";
+
 const AllProducts = () => {
   const context = useGlobalContext() as GlobalContextTypes;
   const { getProduct } = context;
@@ -14,20 +15,24 @@ const AllProducts = () => {
   const [prevPage, setPrevPage] = useState(-1);
   const { isLoading, setLoading } = uselocalState();
   const [allProducts, setAllProducts] = useState(null);
-  const getAllProducts = async () => {
-    // setLoading(true);
+  const getAllProducts = async (page: String | null) => {
+    setLoading(true);
     try {
-      const { data } = await axios.get(`${url}/api/v1/product/`);
+      const { data } = await axios.get(
+        `${url}/api/v1/product?page=${page === null ? "1" : page}&limit=5`
+      );
       setAllProducts(data.result);
       setNextPage(data.next.page);
       setPrevPage(data.previous.page);
+      setLoading(false);
     } catch (error: any) {
       console.log(error);
+
+      setLoading(false);
     }
-    setLoading(false);
   };
   const setPage = async (page: Number) => {
-    // setLoading(true);
+    setLoading(true);
     let setPage = String(page);
     try {
       const { data } = await axios.get(
@@ -41,23 +46,27 @@ const AllProducts = () => {
     }
     setLoading(false);
   };
-  // const sentEditProduct = (id: string) => {
-  //   // console.log(id);
-  //   window.location.href = `?productId=${id}`;
-  // };
   const deleteProducts = async (id: string) => {
     setLoading(true);
     try {
       await axios.delete(`${url}/api/v1/product/${id}`);
-      getAllProducts();
+
+      getAllProducts(
+        String(
+          prevPage === -1 && nextPage === -1
+            ? "1"
+            : prevPage === -1 && nextPage !== -1
+            ? nextPage - 1
+            : prevPage + 1
+        )
+      );
     } catch (error: any) {
       console.log(error);
+      setLoading(false);
     }
-    setLoading(false);
   };
   useEffect(() => {
-    // console.log("ME");
-    getAllProducts();
+    getAllProducts("1");
   }, []);
   if (isLoading) {
     return (

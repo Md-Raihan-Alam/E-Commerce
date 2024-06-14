@@ -25,7 +25,7 @@ const AllUsers = () => {
     getAllUsers();
   }, []);
   const setPage = async (page: Number) => {
-    // setLoading(true);
+    setLoading(true);
     let setPage = String(page);
     try {
       const { data } = await axios.get(
@@ -93,11 +93,13 @@ const AllUsers = () => {
                 <td className="whitespace-nowrap">
                   {e.address == "" ? "Not provided" : e.address}
                 </td>
-                <td className="whitespace-nowrap">Customer</td>
+                <td className="whitespace-nowrap">{e.role}</td>
                 <td className="whitespace-nowrap">
                   {e.isVerified ? "Yes" : "No"}
                 </td>
-                <td className="whitespace-nowrap">{e.verified.slice(0, 10)}</td>
+                <td className="whitespace-nowrap">
+                  {e.verified === undefined ? "N/A" : e.verified.slice(0, 10)}
+                </td>
               </tr>
             );
           })}

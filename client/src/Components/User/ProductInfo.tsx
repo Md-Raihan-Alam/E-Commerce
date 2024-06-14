@@ -2,25 +2,30 @@ import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import url from "../../utils/url";
 import { useGlobalContext, GlobalContextTypes } from "../../context";
+import uselocalState from "../../utils/localState";
+import Loading from "../../utils/Loading";
 
 const ProductInfos = () => {
-  // getProduct(id);
+  const { alert, showAlert, hideAlert, isLoading, setLoading } =
+    uselocalState();
   const context = useGlobalContext() as GlobalContextTypes;
   const { getCookie, editProduct } = context;
+
   const [productFound, setProductFound] = useState(false);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
-  const [image, setImage] = useState(null);
+  const [image, setImage] = useState<File | null>(null);
   const [freeDelivery, setFreeDelivery] = useState(false);
   const [totalInventory, setTotalInventory] = useState("");
   const [rating, setRating] = useState("");
   const [author, setAuthor] = useState("");
   const [imageUpdate, setImageUpdate] = useState(false);
-  const fileInputRef = useRef(null);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   useEffect(() => {
-    console.log("HERE");
-    if (editProduct !== undefined && editProduct !== null) {
+    if (editProduct) {
       setProductFound(true);
       setName(editProduct.name || "");
       setPrice(editProduct.price || "");
@@ -31,14 +36,18 @@ const ProductInfos = () => {
       setAuthor(editProduct.author || "");
     }
   }, [editProduct]);
+
   const updateSubmit = async () => {
-    if (editProduct !== undefined && editProduct !== null) {
+    hideAlert();
+    if (editProduct) {
       const token = getCookie("token");
       const inventory = parseInt(totalInventory, 10);
       const averageRating = parseFloat(rating);
+
       if (!imageUpdate) {
         setImage(editProduct.image);
       }
+
       try {
         await axios.patch(
           `${url}/api/v1/product/${editProduct._id}`,
@@ -60,27 +69,24 @@ const ProductInfos = () => {
             },
           }
         );
-        setName("");
-        setPrice("");
-        setDescription("");
-        setImage(null);
-        setFreeDelivery(false);
-        setTotalInventory("");
-        setRating("");
-        setAuthor("");
-        fileInputRef.current.value = null;
-      } catch (error: any) {
-        console.log(error);
+
+        resetForm();
+      } catch (error) {
+        console.error(error);
       }
     }
   };
+
   const handleSubmit = async () => {
+    hideAlert();
     const token = getCookie("token");
     const inventory = parseInt(totalInventory, 10);
     const averageRating = parseFloat(rating);
 
+    setLoading(true);
+
     try {
-      await axios.post(
+      const { data } = await axios.post(
         `${url}/api/v1/product`,
         {
           name,
@@ -99,30 +105,59 @@ const ProductInfos = () => {
           },
         }
       );
-      setName("");
-      setPrice("");
-      setDescription("");
-      setImage(null);
-      setFreeDelivery(false);
-      setTotalInventory("");
-      setRating("");
-      setAuthor("");
-      fileInputRef.current.value = null;
-    } catch (error: any) {
-      console.log(error);
+
+      resetForm();
+      showAlert({ text: data.msg, type: "success" });
+    } catch (error) {
+      console.error(error);
+    }
+
+    setTimeout(() => {
+      hideAlert();
+    }, 2000);
+
+    setLoading(false);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageUpdate(true);
+    const file = e.target.files?.[0] || null;
+    setImage(file);
+  };
+
+  const resetForm = () => {
+    setName("");
+    setPrice("");
+    setDescription("");
+    setImage(null);
+    setFreeDelivery(false);
+    setTotalInventory("");
+    setRating("");
+    setAuthor("");
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
-  const handleImageChange = (e: any) => {
-    setImageUpdate(true);
-    const file = e.target.files[0];
-    setImage(file);
-  };
+  if (isLoading) {
+    return (
+      <div className="w-full h-[92vh] flex justify-center items-center">
+        <Loading />
+      </div>
+    );
+  }
+
   return (
     <div className="container mt-5">
       <div className="row">
         <div className="col-md-6 offset-md-3">
           <div className="form-group my-2">
+            {alert.show && (
+              <div className={`alert alert-${alert.type}`}>
+                {alert.text || "Error occurred"}
+              </div>
+            )}
             <label htmlFor="name">Product Name</label>
             <input
               type="text"
@@ -131,6 +166,7 @@ const ProductInfos = () => {
               placeholder="Enter product name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              required
             />
           </div>
           <div className="form-group my-2">
@@ -142,6 +178,7 @@ const ProductInfos = () => {
               placeholder="Enter price"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
+              required
             />
           </div>
           <div className="form-group my-2">
@@ -152,6 +189,7 @@ const ProductInfos = () => {
               placeholder="Enter product description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              required
             />
           </div>
           <div className="form-group my-2">
@@ -171,7 +209,6 @@ const ProductInfos = () => {
                 type="radio"
                 className="form-check-input"
                 name="freeDelivery"
-                placeholder="Enter free delivery price"
                 value="yes"
                 checked={freeDelivery === true}
                 onChange={() => setFreeDelivery(true)}
@@ -203,6 +240,7 @@ const ProductInfos = () => {
               placeholder="Enter inventory"
               value={totalInventory}
               onChange={(e) => setTotalInventory(e.target.value)}
+              required
             />
           </div>
           <div className="form-group my-2">
@@ -214,6 +252,7 @@ const ProductInfos = () => {
               placeholder="Enter average rating"
               value={rating}
               onChange={(e) => setRating(e.target.value)}
+              required
             />
           </div>
           <div className="form-group my-2">
@@ -225,11 +264,11 @@ const ProductInfos = () => {
               placeholder="Enter author name"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
+              required
             />
           </div>
-
           <div className="w-full mt-2 mb-4">
-            {productFound === false ? (
+            {!productFound ? (
               <button
                 type="button"
                 className="btn btn-primary w-full btn-block"
@@ -252,4 +291,5 @@ const ProductInfos = () => {
     </div>
   );
 };
+
 export default ProductInfos;
