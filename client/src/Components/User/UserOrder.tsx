@@ -2,13 +2,17 @@ import { useEffect, useState } from "react";
 import url from "../../utils/url";
 import { useGlobalContext, GlobalContextTypes } from "../../context";
 import axios from "axios";
+import uselocalState from "../../utils/localState";
+import Loading from "../../utils/Loading";
 const MyOrder = () => {
   const context = useGlobalContext() as GlobalContextTypes;
+  const { isLoading, setLoading } = uselocalState();
   const { getCookie } = context;
   const [orders, setOrders] = useState(null);
   const [nextPage, setNextPage] = useState(-1);
   const [prevPage, setPrevPage] = useState(-1);
   const getMyOrder = async () => {
+    setLoading(true);
     try {
       const token = getCookie("token");
       const result = await axios.post(`${url}/api/v1/orders/myorder`, {
@@ -18,15 +22,17 @@ const MyOrder = () => {
       setOrders(result.data.result);
       setNextPage(result.data.next.page);
       setPrevPage(result.data.previous.page);
+      setLoading(false);
     } catch (error: any) {
       console.log(error);
+      setLoading(false);
     }
   };
   useEffect(() => {
     getMyOrder();
   }, []);
   const setPage = async (page: Number) => {
-    // setLoading(true);
+    setLoading(true);
     let setPage = String(page);
     try {
       const result = await axios.get(
@@ -35,10 +41,19 @@ const MyOrder = () => {
       setOrders(result.data.result);
       setNextPage(result.data.next.page);
       setPrevPage(result.data.previous.page);
+      setLoading(false);
     } catch (error) {
       console.log(error);
+      setLoading(false);
     }
   };
+  if (isLoading) {
+    return (
+      <div className="w-full h-[92vh] flex justify-center items-center">
+        <Loading />
+      </div>
+    );
+  }
   if (orders === null) {
     return (
       <div className="w-full h-[70vh] flex justify-center items-center">

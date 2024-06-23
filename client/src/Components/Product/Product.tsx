@@ -42,6 +42,13 @@ const Product = () => {
       setLoading(false);
     }
   };
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const handleRecentProductClick = (id: string) => {
+    getSingleProduct(id);
+    scrollToTop();
+  };
 
   useEffect(() => {
     getSingleProduct(productDetails);
@@ -186,7 +193,7 @@ const Product = () => {
                 height: "500px",
                 cursor: "pointer",
               }}
-              onClick={() => getSingleProduct(e._id)}
+              onClick={() => handleRecentProductClick(e._id)}
               key={e._id}
             >
               <img

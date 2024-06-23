@@ -11,6 +11,7 @@ import { useSelector } from "react-redux";
 const Navbar = () => {
   const context = useGlobalContext() as GlobalContextTypes;
   const { user } = context;
+
   const [showOrder, setShowOrder] = useState(false);
   const { cart } = useSelector((state) => state);
   const [totalCart, setTotalCart] = useState(0);
@@ -25,6 +26,7 @@ const Navbar = () => {
   const showOrderOption = () => {
     setShowOrder(!showOrder);
   };
+
   return (
     <div className="relative">
       <nav className="navbar sticky-top top-0 z-50 bg-body-tertiary border-black border-b">
@@ -143,7 +145,11 @@ const Navbar = () => {
                 <div>Total Price:</div>
                 <div>{totalCart}</div>
               </div>
-              <Link to="Order" className="btn btn-success btn-block w-[80%]">
+              <Link
+                to="Order"
+                onClick={showOrderOption}
+                className="btn btn-success btn-block w-[80%]"
+              >
                 Make Payment
               </Link>
             </div>

@@ -1,4 +1,4 @@
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useReactToPrint } from "react-to-print";
@@ -6,11 +6,16 @@ import { useGlobalContext, GlobalContextTypes } from "../context";
 import DefaultProductPicture from "../assets/default-book-cover.png";
 import url from "../utils/url";
 import axios from "axios";
+import { resetCart } from "../store/slices/cart-slice";
+import uselocalState from "../utils/localState";
+import Loading from "../utils/Loading";
 const Order = () => {
   const componentRef = useRef();
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
   });
+  const { setLoading, isLoading } = uselocalState();
+  const dispatch = useDispatch();
   const { cart } = useSelector((state) => state);
   const [totalPrice, setTotalPrice] = useState(0);
   const [cardNumber, setCardNumber] = useState("");
@@ -37,6 +42,7 @@ const Order = () => {
     setTotalPrice((prevState) => prevState + 69);
   };
   useEffect(() => {
+    setLoading(false);
     for (const item of cart) {
       if (!item.freeDelivery) {
         updateDelivery();
@@ -46,6 +52,7 @@ const Order = () => {
   }, []);
 
   const submitOrder = async () => {
+    setLoading(true);
     try {
       const data = {
         cart: cart,
@@ -55,25 +62,19 @@ const Order = () => {
         deliveryCost: deliveryCost ? 69 : 0,
       };
       const result = await axios.post(`${url}/api/v1/orders`, data);
-      console.log(result);
+
       setSuccess(true);
       setOrderedItems(result.data.order.orderItems);
-      console.log(result.data.order.orderItems);
+      dispatch(resetCart());
+      localStorage.removeItem("state");
+      setLoading(false);
     } catch (error: any) {
       setSuccess(false);
       console.log(error);
+      setLoading(false);
     }
   };
 
-  if (cart.length <= 0) {
-    return (
-      <div className="w-full h-[92vh] flex justify-center  items-center">
-        <div className="alert alert-info text-center px-5 py-2">
-          You do not have any item in your cart
-        </div>
-      </div>
-    );
-  }
   if (success) {
     return (
       <div>
@@ -143,6 +144,15 @@ const Order = () => {
           >
             Print Data
           </button>
+        </div>
+      </div>
+    );
+  }
+  if (cart.length <= 0) {
+    return (
+      <div className="w-full h-[92vh] flex justify-center  items-center">
+        <div className="alert alert-info text-center px-5 py-2">
+          You do not have any item in your cart
         </div>
       </div>
     );
@@ -222,9 +232,10 @@ const Order = () => {
             />
             <button
               onClick={submitOrder}
+              disabled={isLoading ? true : false}
               className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded w-full relative"
             >
-              Pay
+              {isLoading ? <Loading /> : "Pay"}
             </button>
           </div>
         </section>

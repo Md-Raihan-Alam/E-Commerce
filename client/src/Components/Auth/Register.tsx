@@ -38,7 +38,8 @@ const Register = () => {
       if (
         data.msg === "Please provide all value" ||
         data.msg === "Name cannot be more than 20 character" ||
-        data.msg === "Password must be greater than 6 character"
+        data.msg === "Password must be greater than 6 character" ||
+        data.msg === "Choose another email, this cannon be accepted"
       ) {
         showAlert({ type: "danger", text: data.msg });
       } else {
