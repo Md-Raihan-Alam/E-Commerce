@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon --exec ts-node app.ts",
-    "build": "tsc"
+    "build": "rimraf dist && tsc",
+    "ts.check": "tsc --project tsconfig.json"
   },
   "keywords": [],
   "author": "",
@@ -51,5 +52,10 @@
   },
   "engines": {
     "node": "18.x"
-  }
+  },
+  "pre-commit": [
+    "ts.check",
+    "build",
+    "add-build"
+  ]
 }
