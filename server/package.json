@@ -6,8 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon --exec ts-node app.ts",
-    "build": "rimraf dist && tsc",
-    "ts.check": "tsc --project tsconfig.json"
+    "dev": "ts-node-dev index.ts",
+    "build": "tsc",
+    "serve": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
@@ -52,10 +53,5 @@
   },
   "engines": {
     "node": "18.x"
-  },
-  "pre-commit": [
-    "ts.check",
-    "build",
-    "add-build"
-  ]
+  }
 }
